@@ -1,4 +1,5 @@
 import { useStore } from "../store";
+import { SHAPE_LABEL } from "../data/beads";
 import { getBeadType, getPalette } from "../data/palettes";
 import { stitchDef } from "../data/stitches";
 import { pieceSize } from "../lib/measure";
@@ -12,6 +13,7 @@ export default function CanvasInfo() {
   const stitch = useStore((s) => s.stitch);
   const units = useStore((s) => s.units);
   const beadType = getBeadType(paletteId);
+  const def = stitchDef(stitch);
   const size = pieceSize(cols, rows, beadType, units);
 
   return (
@@ -27,14 +29,19 @@ export default function CanvasInfo() {
       <PopoverContent align="end" className="w-64">
         <div className="mb-2 text-sm font-semibold">Detalles del patrón</div>
         <dl className="space-y-1.5 text-[13px]">
-          <Item k="Puntada" v={stitchDef(stitch).label} />
+          <Item k="Puntada" v={def.label} />
           <Item k="Paleta" v={getPalette(paletteId).label} />
-          <Item k="Forma" v={beadType.shape === "cylinder" ? "Cilíndrica" : "Redonda"} />
+          <Item k="Forma" v={SHAPE_LABEL[beadType.shape]} />
           <Item k="Tamaño cuenta" v={beadType.sizeLabel} />
           <Item k="Rejilla" v={`${cols} × ${rows}`} />
           <Item k="Tamaño real" v={`${size.w} × ${size.h} ${size.unit}`} />
+          <Item k="Largo" v={def.lengthAxis === "h" ? "Horizontal" : "Vertical"} />
+          <Item k="Tejido" v={def.boustrophedon ? "Filas alternan sentido" : "Mismo sentido"} />
           <Item k="Cuentas (máx.)" v={String(cols * rows)} />
         </dl>
+        <p className="mt-2 border-t border-border pt-2 text-[12px] leading-snug text-muted-foreground">
+          {def.weaveNote}
+        </p>
       </PopoverContent>
     </Popover>
   );

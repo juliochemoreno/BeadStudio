@@ -1,6 +1,6 @@
 import { EMPTY } from "../data/beads";
 import { getBeadType, getCatalog } from "../data/palettes";
-import { StitchId, stitchDef } from "../data/stitches";
+import { StitchId, stitchDef, beadOrient } from "../data/stitches";
 import { drawBead } from "./beadRender";
 
 function buildCanvas(
@@ -15,8 +15,7 @@ function buildCanvas(
   const def = stitchDef(stitch);
   const vertical = def.orient === "v";
   const aspectV = beadType.pitchY / beadType.pitchX;
-  const aspect = vertical ? aspectV : 1 / aspectV;
-  const orient = def.orient;
+  const aspect = def.weave === "raw" ? 1 : vertical ? aspectV : 1 / aspectV;
   const cellW = 22;
   const cellH = cellW * aspect;
   const pad = 18;
@@ -44,7 +43,7 @@ function buildCanvas(
         continue;
       }
       const bead = catalog[idx];
-      drawBead(o, x, y, cellW, cellH, bead.hex, beadType.shape, bead.finish, orient);
+      drawBead(o, x, y, cellW, cellH, bead.hex, beadType.shape, bead.finish, beadOrient(def, col, r));
     }
   return c;
 }

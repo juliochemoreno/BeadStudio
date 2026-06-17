@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import { useStore, ToolId } from "../store";
 import { EMPTY } from "../data/beads";
 import { getBeadType, getCatalog } from "../data/palettes";
-import { stitchDef } from "../data/stitches";
+import { stitchDef, beadOrient } from "../data/stitches";
 import { drawBead } from "../lib/beadRender";
 import { printPattern } from "../lib/export";
 import { saveProject } from "../lib/project";
@@ -71,6 +71,7 @@ export default function BeadCanvas() {
   const rows = useStore((s) => s.rows);
   const paletteId = useStore((s) => s.paletteId);
   const selection = useStore((s) => s.selection);
+  const schematic = useStore((s) => s.schematic);
   const showNumbers = useStore((s) => s.showNumbers);
   const tool = useStore((s) => s.tool);
   const undo = useStore((s) => s.undo);
@@ -88,8 +89,8 @@ export default function BeadCanvas() {
   // orient 'h' = cuenta acostada (square/loom/brick) · 'v' = parada (peyote)
   const vertical = def.orient === "v";
   const aspectV = beadType.pitchY / beadType.pitchX;
-  const aspect = vertical ? aspectV : 1 / aspectV; // cellH = scale * aspect
-  const orient = def.orient;
+  // RAW usa celdas cuadradas; las unidades se muestran con separadores (no rotando cuentas)
+  const aspect = def.weave === "raw" ? 1 : vertical ? aspectV : 1 / aspectV;
 
   function cellH() {
     return view.current.scale * aspect;
@@ -133,13 +134,60 @@ export default function BeadCanvas() {
           continue;
         }
         const bead = catalog[idx];
-        if (detail) {
-          drawBead(ctx, x, y, scale, ch, bead.hex, beadType.shape, bead.finish, orient);
+        if (!bead) continue;
+        if (schematic) {
+          // vista esquemática: celda plana de color (fácil de leer/contar)
+          ctx.fillStyle = bead.hex;
+          ctx.fillRect(x + 0.5, y + 0.5, scale - 1, ch - 1);
+          if (scale > 5) {
+            ctx.strokeStyle = ctheme.line;
+            ctx.lineWidth = 1;
+            ctx.strokeRect(x + 0.5, y + 0.5, scale - 1, ch - 1);
+          }
+        } else if (detail) {
+          drawBead(ctx, x, y, scale, ch, bead.hex, beadType.shape, bead.finish, beadOrient(def, c, r));
         } else {
           ctx.fillStyle = bead.hex;
           ctx.fillRect(x + 0.5, y + 0.5, scale - 1, ch - 1);
         }
       }
+    }
+
+    // RAW: separadores de unidad (grupos de "drop" cuentas)
+    if (def.weave === "raw" && def.drop > 1) {
+      ctx.save();
+      ctx.strokeStyle = ctheme.guide;
+      ctx.lineWidth = 1.5;
+      ctx.globalAlpha = 0.85;
+      ctx.beginPath();
+      for (let c = def.drop; c < cols; c += def.drop) {
+        const x = offX + c * scale;
+        ctx.moveTo(x, offY);
+        ctx.lineTo(x, offY + rows * ch);
+      }
+      for (let r = def.drop; r < rows; r += def.drop) {
+        const y = offY + r * ch;
+        ctx.moveTo(offX, y);
+        ctx.lineTo(offX + cols * scale, y);
+      }
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // Tubular: marca de costura (el borde izquierdo se une con el derecho)
+    if (stitch === "tubular") {
+      const seam = theme === "light" ? "#2f6bff" : "#5b8cff";
+      ctx.save();
+      ctx.setLineDash([5, 4]);
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = seam;
+      ctx.beginPath();
+      ctx.moveTo(offX + 0.5, offY);
+      ctx.lineTo(offX + 0.5, offY + rows * ch);
+      ctx.moveTo(offX + cols * scale + 0.5, offY);
+      ctx.lineTo(offX + cols * scale + 0.5, offY + rows * ch);
+      ctx.stroke();
+      ctx.restore();
     }
 
     // numeración de filas/columnas + guía marcada cada 10 (estilo papel cuadriculado)
@@ -177,7 +225,7 @@ export default function BeadCanvas() {
         if (n !== 1 && n !== cols && n % step !== 0) continue;
         const x = offX + c * scale + scale / 2;
         if (x < -20 || x > W + 20) continue;
-        const y = offY + (stitch === "peyote" ? (c % 2) * 0.5 * ch : 0) - 4;
+        const y = offY + offsetY(c) - 4;
         const major = n % 10 === 0;
         ctx.fillStyle = major ? ctheme.numBold : ctheme.num;
         ctx.font = `${major ? 600 : 400} ${fs}px Inter, system-ui, sans-serif`;
@@ -205,13 +253,13 @@ export default function BeadCanvas() {
     const d = drag.current;
     if (d.shape && d.start && d.end) {
       const { tool, currentBead } = useStore.getState();
-      const bead = catalog[currentBead];
+      const bead = catalog[currentBead] ?? catalog[0];
       ctx.globalAlpha = 0.65;
       for (const [c, r] of previewCells(tool, d.start[0], d.start[1], d.end[0], d.end[1])) {
         if (c < 0 || r < 0 || c >= cols || r >= rows) continue;
         const x = offX + c * scale + offsetX(r);
         const y = offY + r * ch + offsetY(c);
-        if (detail) drawBead(ctx, x, y, scale, ch, bead.hex, beadType.shape, bead.finish, orient);
+        if (detail) drawBead(ctx, x, y, scale, ch, bead.hex, beadType.shape, bead.finish, beadOrient(def, c, r));
         else {
           ctx.fillStyle = bead.hex;
           ctx.fillRect(x, y, scale, ch);
@@ -233,7 +281,8 @@ export default function BeadCanvas() {
           const x = offX + gc * scale + offsetX(gr);
           const y = offY + gr * ch + offsetY(gc);
           const bead = catalog[v];
-          if (detail) drawBead(ctx, x, y, scale, ch, bead.hex, beadType.shape, bead.finish, orient);
+          if (!bead) continue;
+          if (detail) drawBead(ctx, x, y, scale, ch, bead.hex, beadType.shape, bead.finish, beadOrient(def, gc, gr));
           else {
             ctx.fillStyle = bead.hex;
             ctx.fillRect(x, y, scale, ch);
@@ -300,7 +349,7 @@ export default function BeadCanvas() {
   useEffect(() => {
     draw();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rev, showNumbers, theme, selection]);
+  }, [rev, showNumbers, theme, selection, schematic]);
 
   // reencuadrar al cambiar puntada, tamaño o tipo de cuenta (cambia la geometría)
   useEffect(() => {
