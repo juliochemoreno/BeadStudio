@@ -80,14 +80,15 @@ export function drawBead(
       ? ctx.createLinearGradient(x, y, x, y + h)
       : ctx.createLinearGradient(x, y, x + w, y);
     if (finish === "matte") {
-      body.addColorStop(0, shade(rgb, -0.06));
-      body.addColorStop(0.5, shade(rgb, 0.04));
-      body.addColorStop(1, shade(rgb, -0.1));
+      body.addColorStop(0, shade(rgb, -0.08));
+      body.addColorStop(0.5, shade(rgb, 0.05));
+      body.addColorStop(1, shade(rgb, -0.12));
     } else {
-      body.addColorStop(0, shade(rgb, -0.18));
-      body.addColorStop(0.42, shade(rgb, 0.22));
-      body.addColorStop(0.6, shade(rgb, 0.05));
-      body.addColorStop(1, shade(rgb, -0.24));
+      body.addColorStop(0, shade(rgb, -0.28));
+      body.addColorStop(0.38, shade(rgb, 0.36));
+      body.addColorStop(0.55, shade(rgb, 0.1));
+      body.addColorStop(0.8, shade(rgb, -0.14));
+      body.addColorStop(1, shade(rgb, -0.34));
     }
     ctx.fillStyle = body;
     ctx.fillRect(x, y, w, h);
@@ -104,33 +105,47 @@ export function drawBead(
       ctx.fillRect(x, y + h - cap, w, cap);
     }
     ctx.globalAlpha = 1;
+  } else if (shape === "barrel") {
+    // pony bead: barril rechoncho con hueco grande
+    const r = Math.min(w, h) * 0.45;
+    roundRectPath(ctx, x, y, w, h, r);
+    ctx.clip();
+    const rad = ctx.createRadialGradient(cx - w * 0.16, cy - h * 0.22, Math.min(w, h) * 0.12, cx, cy, Math.max(w, h) * 0.7);
+    if (finish === "matte") {
+      rad.addColorStop(0, shade(rgb, 0.08));
+      rad.addColorStop(1, shade(rgb, -0.14));
+    } else {
+      rad.addColorStop(0, shade(rgb, 0.4));
+      rad.addColorStop(0.5, shade(rgb, 0.05));
+      rad.addColorStop(1, shade(rgb, -0.26));
+    }
+    ctx.fillStyle = rad;
+    ctx.fillRect(x, y, w, h);
+    ctx.globalAlpha = 1;
   } else {
     // rocalla redonda: esfera achatada
     ellipsePath(ctx, cx, cy, w / 2, h / 2);
     ctx.clip();
     const rad = ctx.createRadialGradient(
-      cx - w * 0.18,
-      cy - h * 0.2,
-      Math.min(w, h) * 0.1,
+      cx - w * 0.22,
+      cy - h * 0.24,
+      Math.min(w, h) * 0.05,
       cx,
       cy,
-      Math.max(w, h) * 0.62
+      Math.max(w, h) * 0.66
     );
     if (finish === "matte") {
-      rad.addColorStop(0, shade(rgb, 0.1));
-      rad.addColorStop(1, shade(rgb, -0.12));
+      rad.addColorStop(0, shade(rgb, 0.14));
+      rad.addColorStop(0.6, shade(rgb, -0.02));
+      rad.addColorStop(1, shade(rgb, -0.18));
     } else {
-      rad.addColorStop(0, shade(rgb, 0.45));
-      rad.addColorStop(0.45, shade(rgb, 0.08));
-      rad.addColorStop(1, shade(rgb, -0.28));
+      rad.addColorStop(0, shade(rgb, 0.58));
+      rad.addColorStop(0.35, shade(rgb, 0.12));
+      rad.addColorStop(0.72, shade(rgb, -0.12));
+      rad.addColorStop(1, shade(rgb, -0.4));
     }
     ctx.fillStyle = rad;
     ctx.fillRect(x, y, w, h);
-    // hueco central
-    ctx.fillStyle = shade(rgb, -0.4);
-    ctx.globalAlpha = 0.35;
-    ellipsePath(ctx, cx, cy, Math.max(0.6, w * 0.1), Math.max(0.6, h * 0.1));
-    ctx.fill();
     ctx.globalAlpha = 1;
   }
 
@@ -172,19 +187,22 @@ export function drawBead(
     }
   }
 
-  // --- brillo especular (no en mate) ---
+  // --- sombra de contacto: oscurece el borde inferior para dar volumen ---
+  const ao = ctx.createLinearGradient(x, y + h * 0.55, x, y + h);
+  ao.addColorStop(0, "rgba(0,0,0,0)");
+  ao.addColorStop(1, finish === "matte" ? "rgba(0,0,0,0.16)" : "rgba(0,0,0,0.26)");
+  ctx.fillStyle = ao;
+  ctx.fillRect(x, y, w, h);
+
+  // --- brillo especular (no en mate): un punto nítido arriba-izquierda ---
   if (finish !== "matte") {
     const hl =
-      finish === "transparent" || finish === "luster" || finish === "ceylon" ? 0.6 : 0.4;
-    const g = ctx.createRadialGradient(
-      x + w * 0.3,
-      y + h * 0.24,
-      0,
-      x + w * 0.3,
-      y + h * 0.24,
-      Math.max(w, h) * 0.4
-    );
+      finish === "transparent" || finish === "luster" || finish === "ceylon" ? 0.75 : 0.55;
+    const hx = x + w * 0.32,
+      hy = y + h * 0.26;
+    const g = ctx.createRadialGradient(hx, hy, 0, hx, hy, Math.max(w, h) * 0.32);
     g.addColorStop(0, `rgba(255,255,255,${hl})`);
+    g.addColorStop(0.5, `rgba(255,255,255,${hl * 0.22})`);
     g.addColorStop(1, "rgba(255,255,255,0)");
     ctx.fillStyle = g;
     ctx.fillRect(x, y, w, h);
@@ -195,6 +213,7 @@ export function drawBead(
   // contorno sutil para separar
   ctx.save();
   if (shape === "cylinder") roundRectPath(ctx, x, y, w, h, Math.min(w, h) * 0.32);
+  else if (shape === "barrel") roundRectPath(ctx, x, y, w, h, Math.min(w, h) * 0.45);
   else ellipsePath(ctx, cx, cy, w / 2, h / 2);
   ctx.lineWidth = 1;
   ctx.strokeStyle = "rgba(0,0,0,0.28)";
