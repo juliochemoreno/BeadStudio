@@ -14,12 +14,19 @@ import {
 import { Separator } from "@/components/ui/separator";
 import PaletteGrid from "./PaletteGrid";
 import BeadSwatch from "./BeadSwatch";
-import { Grid2x2, Palette, Minus, Plus, Circle } from "lucide-react";
+import { Grid2x2, Palette, Minus, Plus, Circle, X } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const MIN = 2;
 const MAX = 400;
 
-export default function SidePanel() {
+export default function SidePanel({
+  open = false,
+  onClose,
+}: {
+  open?: boolean;
+  onClose?: () => void;
+}) {
   const cols = useStore((s) => s.cols);
   const rows = useStore((s) => s.rows);
   const stitch = useStore((s) => s.stitch);
@@ -53,13 +60,29 @@ export default function SidePanel() {
   const setRows = (n: number) => resize(cols, Math.max(MIN, Math.min(MAX, n)));
 
   return (
-    <aside className="flex h-full w-72 min-h-0 flex-col overflow-hidden border-l border-border bg-card">
+    <aside
+      className={cn(
+        "flex h-full min-h-0 flex-col overflow-hidden border-l border-border bg-card",
+        // móvil: drawer deslizante desde la derecha
+        "fixed inset-y-0 right-0 z-40 w-[82%] max-w-[19rem] shadow-2xl transition-transform duration-200",
+        open ? "translate-x-0" : "translate-x-full",
+        // escritorio: panel fijo de siempre
+        "md:static md:z-auto md:w-72 md:max-w-none md:translate-x-0 md:shadow-none"
+      )}
+    >
       <Tabs defaultValue="design" className="flex min-h-0 flex-1 flex-col">
-        <div className="p-3 pb-0">
+        <div className="flex items-center gap-2 p-3 pb-0">
           <TabsList className="w-full">
             <TabsTrigger value="design">Diseñar</TabsTrigger>
             <TabsTrigger value="palette">Paleta</TabsTrigger>
           </TabsList>
+          <button
+            onClick={onClose}
+            aria-label="Cerrar panel"
+            className="grid h-8 w-8 flex-none place-items-center rounded-md border border-border text-muted-foreground transition-colors hover:bg-accent md:hidden"
+          >
+            <X size={16} />
+          </button>
         </div>
 
         <TabsContent value="design" className="flex min-h-0 flex-1 flex-col">
