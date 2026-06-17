@@ -28,3 +28,6 @@ pnpm-debug.log*
 
 # Cloudflare wrangler temp
 .wrangler/
+
+# Claude Code (config local del agente)
+.claude/

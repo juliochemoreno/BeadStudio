@@ -153,6 +153,12 @@ export default function TopBar() {
             Numeración del grid
           </DropdownMenuCheckboxItem>
           <DropdownMenuCheckboxItem
+            checked={useStore((s) => s.showRulers)}
+            onCheckedChange={() => getState().toggleRulers()}
+          >
+            Reglas de medición
+          </DropdownMenuCheckboxItem>
+          <DropdownMenuCheckboxItem
             checked={schematic}
             onCheckedChange={() => getState().toggleSchematic()}
           >
@@ -186,7 +192,7 @@ export default function TopBar() {
 
         <Menu label="Ayuda">
           <DropdownMenuItem onClick={() => setTimeout(() => setGuideOpen(true), 10)}>
-            <BookOpen size={14} /> Guía de cuentas Miyuki
+            <BookOpen size={14} /> Guía de cuentas
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuLabel>Atajos</DropdownMenuLabel>

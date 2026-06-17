@@ -1,7 +1,7 @@
 import { useStore } from "../store";
-import { SHAPE_LABEL } from "../data/beads";
-import { getBeadType, getCatalogLabel } from "../data/palettes";
+import { getBeadType } from "../data/palettes";
 import { stitchDef } from "../data/stitches";
+import { EMPTY } from "../data/beads";
 import { pieceSize } from "../lib/measure";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Info } from "lucide-react";
@@ -10,12 +10,18 @@ export default function CanvasInfo() {
   const cols = useStore((s) => s.cols);
   const rows = useStore((s) => s.rows);
   const beadTypeId = useStore((s) => s.beadTypeId);
-  const catalogId = useStore((s) => s.catalogId);
   const stitch = useStore((s) => s.stitch);
   const units = useStore((s) => s.units);
+  const grid = useStore((s) => s.grid);
+  
   const beadType = getBeadType(beadTypeId);
   const def = stitchDef(stitch);
   const size = pieceSize(cols, rows, def, beadType, units);
+
+  let activeBeads = 0;
+  for (let i = 0; i < grid.length; i++) {
+    if (grid[i] !== EMPTY) activeBeads++;
+  }
 
   return (
     <Popover>
@@ -27,23 +33,15 @@ export default function CanvasInfo() {
           <Info size={16} />
         </button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-64">
-        <div className="mb-2 text-sm font-semibold">Detalles del patrón</div>
-        <dl className="space-y-1.5 text-[13px]">
-          <Item k="Puntada" v={def.label} />
-          <Item k="Cuenta" v={beadType.label} />
-          <Item k="Paleta" v={getCatalogLabel(catalogId)} />
-          <Item k="Forma" v={SHAPE_LABEL[beadType.shape]} />
-          <Item k="Tamaño cuenta" v={beadType.sizeLabel} />
-          <Item k="Rejilla" v={`${cols} × ${rows}`} />
-          <Item k="Tamaño real" v={`${size.w} × ${size.h} ${size.unit}`} />
-          <Item k="Largo" v={def.lengthAxis === "h" ? "Horizontal" : "Vertical"} />
-          <Item k="Tejido" v={def.boustrophedon ? "Filas alternan sentido" : "Mismo sentido"} />
-          <Item k="Cuentas (máx.)" v={String(cols * rows)} />
+      <PopoverContent align="end" className="w-56 p-4">
+        <div className="mb-3 text-sm font-semibold">Resumen Físico</div>
+        <dl className="space-y-2 text-[13px]">
+          <Item k="Ancho final" v={`${size.w} ${size.unit}`} />
+          <Item k="Alto final" v={`${size.h} ${size.unit}`} />
+          <div className="my-2 border-t border-border" />
+          <Item k="Cuentas tejidas" v={String(activeBeads)} />
+          <Item k="Área (rejilla)" v={`${cols} × ${rows} celdas`} />
         </dl>
-        <p className="mt-2 border-t border-border pt-2 text-[12px] leading-snug text-muted-foreground">
-          {def.weaveNote}
-        </p>
       </PopoverContent>
     </Popover>
   );

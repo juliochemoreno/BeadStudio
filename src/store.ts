@@ -49,6 +49,7 @@ interface State {
   shapeFill: boolean;
   schematic: boolean; // vista esquemática (celdas planas) vs realista
   showNumbers: boolean;
+  showRulers: boolean;
   theme: "dark" | "light";
   units: "in" | "cm";
   recent: number[];
@@ -61,6 +62,7 @@ interface State {
   liftRegion: (sel: Selection) => { buf: Uint16Array; w: number; h: number };
   pasteRegion: (buf: Uint16Array, w: number, h: number, destC: number, destR: number) => void;
   toggleNumbers: () => void;
+  toggleRulers: () => void;
   toggleTheme: () => void;
   toggleUnits: () => void;
   toggleShapeFill: () => void;
@@ -137,6 +139,7 @@ export const useStore = create<State>()(
   shapeFill: true,
   schematic: false,
   showNumbers: true,
+  showRulers: true,
   theme: "dark",
   units: "cm",
   recent: [DEFAULT_BEAD_INDEX],
@@ -181,6 +184,7 @@ export const useStore = create<State>()(
   },
 
   toggleNumbers: () => set((s) => ({ showNumbers: !s.showNumbers })),
+  toggleRulers: () => set((s) => ({ showRulers: !s.showRulers })),
   toggleTheme: () => set((s) => ({ theme: s.theme === "dark" ? "light" : "dark" })),
   toggleUnits: () => set((s) => ({ units: s.units === "in" ? "cm" : "in" })),
   toggleShapeFill: () => set((s) => ({ shapeFill: !s.shapeFill })),

@@ -9,4 +9,5 @@ export default defineConfig({
       "@": fileURLToPath(new URL("./src", import.meta.url)),
     },
   },
+  server: process.env.PORT ? { port: Number(process.env.PORT) } : undefined,
 });

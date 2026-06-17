@@ -4,7 +4,7 @@ import { EMPTY } from "../data/beads";
 import { getBeadType, getCatalog } from "../data/palettes";
 import { stitchDef, beadOrient } from "../data/stitches";
 import { drawBead } from "../lib/beadRender";
-import { cellAspect } from "../lib/geometry";
+import { cellAspect, cellPitch } from "../lib/geometry";
 import { printPattern } from "../lib/export";
 import { saveProject } from "../lib/project";
 import {
@@ -15,11 +15,12 @@ import {
   triangleCells,
   diamondCells,
 } from "../lib/shapes";
-import { Plus, Minus, Maximize, Undo2, Redo2, Hash } from "lucide-react";
+import { Plus, Minus, Maximize, Undo2, Redo2, Hash, Ruler } from "lucide-react";
 import CanvasInfo from "./CanvasInfo";
 
 const SHAPE_TOOLS: ToolId[] = ["line", "rect", "oval", "triangle", "diamond"];
 const DETAIL_MIN = 9; // px de celda a partir del cual se dibuja la cuenta con relieve
+const RULER_THICKNESS = 24; // px de ancho/alto de las reglas
 
 function previewCells(tool: ToolId, c0: number, r0: number, c1: number, r1: number): Cell[] {
   switch (tool) {
@@ -39,9 +40,12 @@ function previewCells(tool: ToolId, c0: number, r0: number, c1: number, r1: numb
 }
 
 export default function BeadCanvas() {
+  const showRulers = useStore((s) => s.showRulers);
+  const RULER_SIZE = showRulers ? RULER_THICKNESS : 0;
+
   const wrapRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const view = useRef({ scale: 16, offX: 40, offY: 40 });
+  const view = useRef({ scale: 16, offX: 40 + RULER_THICKNESS, offY: 40 + RULER_THICKNESS });
   const drag = useRef({
     start: null as Cell | null,
     end: null as Cell | null,
@@ -79,7 +83,9 @@ export default function BeadCanvas() {
   const undo = useStore((s) => s.undo);
   const redo = useStore((s) => s.redo);
   const toggleNumbers = useStore((s) => s.toggleNumbers);
+  const toggleRulers = useStore((s) => s.toggleRulers);
   const theme = useStore((s) => s.theme);
+  const units = useStore((s) => s.units);
   const ctheme =
     theme === "light"
       ? { empty: "#ededed", line: "#dcdcdc", num: "#737373", numBold: "#0a0a0a", guide: "#c4c4c4" }
@@ -217,7 +223,7 @@ export default function BeadCanvas() {
       ctx.stroke();
       ctx.globalAlpha = 1;
 
-      // columnas (arriba)
+      // columnas (arriba) — sólo dentro del área del patrón, nunca encima de la regla
       ctx.textAlign = "center";
       ctx.textBaseline = "bottom";
       for (let c = 0; c < cols; c++) {
@@ -225,25 +231,27 @@ export default function BeadCanvas() {
         if (n !== 1 && n !== cols && n % step !== 0) continue;
         const x = offX + c * scale + scale / 2;
         if (x < -20 || x > W + 20) continue;
-        const y = offY + offsetY(c) - 4;
+        const yNum = offY + offsetY(c) - 4;
+        if (yNum < RULER_SIZE + 2) continue; // no solapar la regla horizontal
         const major = n % 10 === 0;
         ctx.fillStyle = major ? ctheme.numBold : ctheme.num;
         ctx.font = `${major ? 600 : 400} ${fs}px Inter, system-ui, sans-serif`;
-        ctx.fillText(String(n), x, y);
+        ctx.fillText(String(n), x, yNum);
       }
-      // filas (izquierda)
+      // filas (izquierda) — sólo dentro del área del patrón, nunca encima de la regla
       ctx.textAlign = "right";
       ctx.textBaseline = "middle";
       for (let r = 0; r < rows; r++) {
         const n = r + 1;
         if (n !== 1 && n !== rows && n % step !== 0) continue;
-        const y = offY + r * ch + ch / 2;
-        if (y < -20 || y > H + 20) continue;
-        const x = offX + (def.offset === "row" ? (r % 2) * 0.5 * scale : 0) - 5;
+        const yNum = offY + r * ch + ch / 2;
+        if (yNum < -20 || yNum > H + 20) continue;
+        const xNum = offX + (def.offset === "row" ? (r % 2) * 0.5 * scale : 0) - 5;
+        if (xNum < RULER_SIZE + 2) continue; // no solapar la regla vertical
         const major = n % 10 === 0;
         ctx.fillStyle = major ? ctheme.numBold : ctheme.num;
         ctx.font = `${major ? 600 : 400} ${fs}px Inter, system-ui, sans-serif`;
-        ctx.fillText(String(n), x, y);
+        ctx.fillText(String(n), xNum, yNum);
       }
       ctx.textAlign = "left";
       ctx.textBaseline = "alphabetic";
@@ -314,6 +322,116 @@ export default function BeadCanvas() {
       ctx.strokeRect(x + 0.5, y + 0.5, w, h);
       ctx.restore();
     }
+
+    // ---- Reglas físicas (métricas o imperiales) ----
+    if (showRulers) {
+      const pitch = cellPitch(def, beadType); // { stepX, stepY } en mm
+      const pxPerMmX = scale / pitch.stepX;
+      const pxPerMmY = ch / pitch.stepY;
+
+      const isMetric = units !== "in";
+      // Unidad base a iterar: 1 mm (métrico) o 1/8 de pulgada (imperial)
+      const pxPerBaseX = isMetric ? pxPerMmX : (pxPerMmX * 25.4) / 8;
+      const pxPerBaseY = isMetric ? pxPerMmY : (pxPerMmY * 25.4) / 8;
+      const majorStep = isMetric ? 10 : 8;
+      const midStep   = isMetric ? 5 : 4;
+      const unitLabel = isMetric ? "cm" : '"';
+
+      const rulerBg   = theme === "light" ? "#f0f0f0" : "#1a1a1a";
+      const rulerLine = theme === "light" ? "#b0b0b0" : "#404040";
+      const rulerTxt  = theme === "light" ? "#555"    : "#aaa";
+      const rulerBorder = theme === "light" ? "#d0d0d0" : "#333";
+
+      ctx.save();
+
+      // --- Regla horizontal (eje X) ---
+      ctx.fillStyle = rulerBg;
+      ctx.fillRect(RULER_SIZE, 0, W - RULER_SIZE, RULER_SIZE);
+      ctx.strokeStyle = rulerBorder;
+      ctx.lineWidth = 1;
+      ctx.strokeRect(RULER_SIZE, 0, W - RULER_SIZE, RULER_SIZE);
+
+      const baseStartX = Math.floor((RULER_SIZE - offX) / pxPerBaseX);
+      const baseEndX   = Math.ceil((W - offX) / pxPerBaseX);
+
+      ctx.strokeStyle = rulerLine;
+      ctx.fillStyle   = rulerTxt;
+      ctx.font = `500 9px Inter, system-ui, sans-serif`;
+      ctx.textAlign    = "center";
+      ctx.textBaseline = "bottom";
+      ctx.lineWidth = 1;
+
+      for (let i = baseStartX; i <= baseEndX; i++) {
+        const px = offX + i * pxPerBaseX;
+        if (px < RULER_SIZE || px > W) continue;
+        const isMajor = i % majorStep === 0;
+        const isMid   = i % midStep === 0;
+        const tickH = isMajor ? 8 : isMid ? 5 : 3;
+        ctx.beginPath();
+        ctx.moveTo(px, RULER_SIZE);
+        ctx.lineTo(px, RULER_SIZE - tickH);
+        ctx.stroke();
+        if (isMajor && pxPerBaseX * majorStep > 15) {
+          ctx.fillText(`${i / majorStep}${unitLabel}`, px, RULER_SIZE - tickH - 2);
+        } else if (isMid && pxPerBaseX * midStep > 20) {
+          const midText = isMetric ? ".5" : '½"';
+          ctx.fillText(midText, px, RULER_SIZE - tickH - 2);
+        }
+      }
+
+      // --- Regla vertical (eje Y) ---
+      ctx.fillStyle = rulerBg;
+      ctx.fillRect(0, RULER_SIZE, RULER_SIZE, H - RULER_SIZE);
+      ctx.strokeStyle = rulerBorder;
+      ctx.lineWidth = 1;
+      ctx.strokeRect(0, RULER_SIZE, RULER_SIZE, H - RULER_SIZE);
+
+      const baseStartY = Math.floor((RULER_SIZE - offY) / pxPerBaseY);
+      const baseEndY   = Math.ceil((H - offY) / pxPerBaseY);
+
+      ctx.strokeStyle = rulerLine;
+      ctx.fillStyle   = rulerTxt;
+      ctx.textAlign    = "right";
+      ctx.textBaseline = "middle";
+      ctx.lineWidth = 1;
+
+      for (let i = baseStartY; i <= baseEndY; i++) {
+        const py = offY + i * pxPerBaseY;
+        if (py < RULER_SIZE || py > H) continue;
+        const isMajor = i % majorStep === 0;
+        const isMid   = i % midStep === 0;
+        const tickW = isMajor ? 8 : isMid ? 5 : 3;
+        ctx.beginPath();
+        ctx.moveTo(RULER_SIZE, py);
+        ctx.lineTo(RULER_SIZE - tickW, py);
+        ctx.stroke();
+        if (isMajor && pxPerBaseY * majorStep > 15) {
+          ctx.save();
+          ctx.translate(RULER_SIZE - tickW - 2, py);
+          ctx.rotate(-Math.PI / 2);
+          ctx.textAlign = "center";
+          ctx.fillText(`${i / majorStep}${unitLabel}`, 0, 0);
+          ctx.restore();
+        } else if (isMid && pxPerBaseY * midStep > 20) {
+          const midText = isMetric ? ".5" : '½"';
+          ctx.save();
+          ctx.translate(RULER_SIZE - tickW - 2, py);
+          ctx.rotate(-Math.PI / 2);
+          ctx.textAlign = "center";
+          ctx.fillText(midText, 0, 0);
+          ctx.restore();
+        }
+      }
+
+      // Esquina superior-izquierda (cuadrado donde se cruzan las dos reglas)
+      ctx.fillStyle = rulerBg;
+      ctx.fillRect(0, 0, RULER_SIZE, RULER_SIZE);
+      ctx.strokeStyle = rulerBorder;
+      ctx.lineWidth = 1;
+      ctx.strokeRect(0, 0, RULER_SIZE, RULER_SIZE);
+
+      ctx.restore();
+    }
   }
 
   function resizeCanvas() {
@@ -335,21 +453,26 @@ export default function BeadCanvas() {
     const pad = 36;
     const extraX = def.offset === "row" ? 0.5 : 0;
     const extraY = def.offset === "col" ? 0.5 : 0;
-    const sx = (wrap.clientWidth - pad * 2) / (cols + extraX);
-    const sy = (wrap.clientHeight - pad * 2) / ((rows + extraY) * aspect);
-    const scale = Math.max(3, Math.min(46, Math.min(sx, sy)));
+
+    const usableW = wrap.clientWidth - RULER_SIZE;
+    const usableH = wrap.clientHeight - RULER_SIZE;
+
+    const sx = (usableW - pad * 2) / (cols + extraX);
+    const sy = (usableH - pad * 2) / ((rows + extraY) * aspect);
+    const scale = Math.max(8, Math.min(46, Math.min(sx, sy)));
     view.current.scale = scale;
     const ch = scale * aspect;
-    view.current.offX = (wrap.clientWidth - (cols + extraX) * scale) / 2;
-    view.current.offY = (wrap.clientHeight - (rows + extraY) * ch) / 2;
+    
+    view.current.offX = RULER_SIZE + (usableW - (cols + extraX) * scale) / 2;
+    view.current.offY = RULER_SIZE + (usableH - (rows + extraY) * ch) / 2;
     draw();
   }
 
-  // redibujar al pintar o al cambiar numeración/tema
+  // redibujar al pintar o al cambiar numeración/tema/unidades
   useEffect(() => {
     draw();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rev, showNumbers, theme, selection, schematic]);
+  }, [rev, showNumbers, showRulers, theme, selection, schematic, units]);
 
   // reencuadrar al cambiar puntada, tamaño o tipo de cuenta (cambia la geometría)
   useEffect(() => {
@@ -621,7 +744,7 @@ export default function BeadCanvas() {
     const p = { x: e.nativeEvent.offsetX, y: e.nativeEvent.offsetY };
     const v = view.current;
     const old = v.scale;
-    v.scale = Math.max(3, Math.min(64, v.scale * (e.deltaY < 0 ? 1.1 : 0.9)));
+    v.scale = Math.max(8, Math.min(64, v.scale * (e.deltaY < 0 ? 1.1 : 0.9)));
     const k = v.scale / old;
     v.offX = p.x - (p.x - v.offX) * k;
     v.offY = p.y - (p.y - v.offY) * k;
@@ -629,7 +752,7 @@ export default function BeadCanvas() {
   }
 
   function zoom(factor: number) {
-    view.current.scale = Math.max(3, Math.min(64, view.current.scale * factor));
+    view.current.scale = Math.max(8, Math.min(64, view.current.scale * factor));
     draw();
   }
 
@@ -649,7 +772,7 @@ export default function BeadCanvas() {
         onWheel={onWheel}
         onContextMenu={(e) => e.preventDefault()}
       />
-      <div className="absolute left-3 top-3 flex gap-2">
+      <div className="absolute flex gap-2" style={{ top: RULER_SIZE + 8, left: RULER_SIZE + 8 }}>
         <button
           onClick={undo}
           title="Deshacer"
@@ -664,23 +787,11 @@ export default function BeadCanvas() {
         >
           <Redo2 size={16} />
         </button>
-        <button
-          onClick={toggleNumbers}
-          title="Mostrar/ocultar numeración"
-          className={
-            "grid h-9 w-9 place-items-center rounded-lg border shadow-sm transition-colors " +
-            (showNumbers
-              ? "border-primary bg-primary text-primary-foreground"
-              : "border-border bg-card/90 text-foreground hover:bg-accent")
-          }
-        >
-          <Hash size={16} />
-        </button>
       </div>
-      <div className="absolute right-3 top-3">
+      <div className="absolute right-3" style={{ top: RULER_SIZE + 8 }}>
         <CanvasInfo />
       </div>
-      <div className="absolute bottom-3 left-3 flex gap-2">
+      <div className="absolute bottom-3 flex gap-2" style={{ left: RULER_SIZE + 8 }}>
         <button
           className="grid h-9 w-9 place-items-center rounded-lg border border-border bg-card/90 text-foreground shadow-sm transition-colors hover:bg-accent"
           onClick={() => zoom(1.2)}

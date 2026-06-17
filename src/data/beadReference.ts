@@ -26,7 +26,29 @@ export interface RefFamily {
 }
 
 export const REFERENCE_SOURCE =
-  "Fuentes: ficha oficial Miyuki (miyuki-beads.co.jp) y distribuidores (Fire Mountain Gems, Caravan Beads, Perles & Co). Medidas aproximadas — Miyuki solo publica diámetro y agujero de las rocallas; el largo y las unidades/gramo varían con el acabado.";
+  "Fuentes: fichas oficiales de Miyuki (miyuki-beads.co.jp) y Preciosa Ornela (preciosa-ornela.com), más distribuidores (Fire Mountain Gems, Caravan, Perles & Co, Bluestreak) y Wikipedia para el sistema de tallas. Medidas aproximadas: el largo y las unidades/gramo varían con el acabado.";
+
+// El sistema de tallas "/0" (aughts) explicado para el usuario.
+export const AUGHT_NOTE =
+  "Las tallas 11/0, 15/0… (\"aughts\") son una convención tradicional del siglo XIX, basada aproximadamente en cuántas cuentas caben en una pulgada — NO un estándar de milímetros. A mayor número, más pequeña la cuenta. Como no hay norma de industria, el mismo número mide distinto según la marca y la forma: la variación entre fabricantes puede superar la variación dentro de una misma talla.";
+
+export interface CrossRow {
+  aught: string;
+  delica: string; // cilindro
+  miyukiRound: string;
+  toho: string;
+  preciosa: string;
+}
+
+// Diámetro exterior (mm) de la misma talla en distintos productos — demuestra que
+// el mismo "/0" no equivale al mismo tamaño. "—" = esa marca no fabrica esa talla.
+export const CROSS_BRAND: CrossRow[] = [
+  { aught: "15/0", delica: "1.3", miyukiRound: "1.5", toho: "—", preciosa: "1.5" },
+  { aught: "11/0", delica: "1.6", miyukiRound: "2.0", toho: "2.2", preciosa: "2.1" },
+  { aught: "10/0", delica: "2.2", miyukiRound: "—", toho: "—", preciosa: "2.3" },
+  { aught: "8/0", delica: "2.5", miyukiRound: "3.0", toho: "~3.0", preciosa: "2.9" },
+  { aught: "6/0", delica: "—", miyukiRound: "4.0", toho: "—", preciosa: "4.1" },
+];
 
 export const MIYUKI_REFERENCE: RefFamily[] = [
   {
@@ -146,6 +168,44 @@ export const MIYUKI_REFERENCE: RefFamily[] = [
       { name: "Spacer 3 mm (SPR3)", size: "3.0 × 1.3 mm", hole: "1.3 mm", perGram: "~65" },
       { name: "Triangle Spacer (SPTR)", size: "2.8 × 1.3 mm", hole: "1.0 mm", perGram: "~75" },
       { name: "Berry (BB)", size: "4.5 × 3 × 2.5 mm", hole: "0.8 mm", perGram: "~23" },
+    ],
+  },
+];
+
+// Cuentas checas (Preciosa Ornela). Preciosa NO publica una tabla talla→mm en su
+// web; las medidas provienen de distribuidores autorizados (Bluestreak, ScaraBeads,
+// crystalsandbeadsforfriends) cruzados. Son más irregulares que las japonesas y se
+// venden tradicionalmente en mazos (hanks).
+export const PRECIOSA_REFERENCE: RefFamily[] = [
+  {
+    key: "preciosa-round",
+    label: "Rocallas checas (Preciosa)",
+    description:
+      "Seed beads checas de perfil redondeado/orgánico, con más variación entre piezas que las japonesas. Misma numeración inversa. Frente a la Miyuki del mismo número: diámetro parecido pero agujero algo menor (la 11/0 checa ≈ 0.6 mm vs 0.7–0.8 mm japonesa).",
+    beads: [
+      { name: "Rocalla checa 6/0", size: "Ø 4.1 mm", hole: "0.9 mm", perGram: "~13" },
+      { name: "Rocalla checa 7/0", size: "Ø 3.5 mm", hole: "1.0 mm", perGram: "~30" },
+      { name: "Rocalla checa 8/0", size: "Ø 2.9 mm", hole: "0.9 mm", perGram: "~42" },
+      { name: "Rocalla checa 9/0", size: "Ø 2.6 mm", hole: "0.9 mm", perGram: "~65" },
+      { name: "Rocalla checa 10/0", size: "Ø 2.3 mm", hole: "0.8 mm", perGram: "~90" },
+      { name: "Rocalla checa 11/0", size: "Ø 2.1 mm", hole: "0.6 mm", perGram: "~130", note: "La más usada; se vende en mazos." },
+      { name: "Rocalla checa 15/0", size: "Ø 1.5 mm", hole: "~0.6 mm", perGram: "~290" },
+    ],
+  },
+  {
+    key: "preciosa-other",
+    label: "Otras cuentas checas (Preciosa)",
+    description:
+      "Cortes y formas prensadas características del cristal checo. Preciosa rara vez publica el agujero, así que esos valores son aproximados (cuentas prensadas, varían pieza a pieza).",
+    beads: [
+      { name: "Charlotte / one-cut 13/0", size: "Ø 1.7 mm", hole: "0.4 mm", perGram: "~200", note: "Rocalla con 1 faceta." },
+      { name: "Two-cut (hexagonal)", size: "1.6–2.7 mm (12/0–8/0)", hole: "~0.6–0.9 mm", perGram: "—", note: "Tubo de sección hexagonal." },
+      { name: "Three-cut", size: "1.6–2.5 mm (12/0–8/0)", hole: "~0.6–0.9 mm", perGram: "—", note: "Hexagonal con facetas aleatorias." },
+      { name: "Twin (2 agujeros)", size: "2.5 × 5 mm", hole: "2 × ~0.8 mm", perGram: "~19" },
+      { name: "Farfalle / mariposa", size: "3.2 × 6.5 mm", hole: "elíptico central", perGram: "~7.6" },
+      { name: "Pip (pétalo)", size: "5 × 7 mm", hole: "~0.7–0.9 mm", perGram: "~6.6" },
+      { name: "Chilli (2 agujeros)", size: "4 × 11 mm", hole: "~0.8 mm", perGram: "~4" },
+      { name: "Ripple (disco ondulado)", size: "Ø 12 × 3 mm", hole: "central", perGram: "~1.2" },
     ],
   },
 ];
