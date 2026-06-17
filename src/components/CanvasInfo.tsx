@@ -14,7 +14,7 @@ export default function CanvasInfo() {
   const units = useStore((s) => s.units);
   const beadType = getBeadType(paletteId);
   const def = stitchDef(stitch);
-  const size = pieceSize(cols, rows, beadType, units);
+  const size = pieceSize(cols, rows, def, beadType, units);
 
   return (
     <Popover>

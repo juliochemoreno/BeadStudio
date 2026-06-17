@@ -2,6 +2,7 @@ import { EMPTY } from "../data/beads";
 import { getBeadType, getCatalog } from "../data/palettes";
 import { StitchId, stitchDef, beadOrient } from "../data/stitches";
 import { drawBead } from "./beadRender";
+import { cellAspect } from "./geometry";
 
 function buildCanvas(
   grid: Uint16Array,
@@ -13,9 +14,7 @@ function buildCanvas(
   const beadType = getBeadType(paletteId);
   const catalog = getCatalog(paletteId);
   const def = stitchDef(stitch);
-  const vertical = def.orient === "v";
-  const aspectV = beadType.pitchY / beadType.pitchX;
-  const aspect = def.weave === "raw" ? 1 : vertical ? aspectV : 1 / aspectV;
+  const aspect = cellAspect(def, beadType);
   const cellW = 22;
   const cellH = cellW * aspect;
   const pad = 18;

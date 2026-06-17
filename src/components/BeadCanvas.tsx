@@ -4,6 +4,7 @@ import { EMPTY } from "../data/beads";
 import { getBeadType, getCatalog } from "../data/palettes";
 import { stitchDef, beadOrient } from "../data/stitches";
 import { drawBead } from "../lib/beadRender";
+import { cellAspect } from "../lib/geometry";
 import { printPattern } from "../lib/export";
 import { saveProject } from "../lib/project";
 import {
@@ -87,10 +88,8 @@ export default function BeadCanvas() {
   const catalog = getCatalog(paletteId);
   const def = stitchDef(stitch);
   // orient 'h' = cuenta acostada (square/loom/brick) · 'v' = parada (peyote)
-  const vertical = def.orient === "v";
-  const aspectV = beadType.pitchY / beadType.pitchX;
   // RAW usa celdas cuadradas; las unidades se muestran con separadores (no rotando cuentas)
-  const aspect = def.weave === "raw" ? 1 : vertical ? aspectV : 1 / aspectV;
+  const aspect = cellAspect(def, beadType);
 
   function cellH() {
     return view.current.scale * aspect;
