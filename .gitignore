@@ -6,6 +6,9 @@ dist/
 dist-ssr/
 *.local
 
+# archivos temporales de Vite (config compilada al vuelo)
+*.timestamp-*.mjs
+
 # logs
 npm-debug.log*
 yarn-debug.log*
