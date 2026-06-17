@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { useStore } from "../store";
 import { exportPNG, exportWordChart, printPattern } from "../lib/export";
 import { saveProject, openProject } from "../lib/project";
+import BeadGuide from "./BeadGuide";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -33,6 +35,7 @@ import {
   RotateCw,
   Sun,
   Moon,
+  BookOpen,
 } from "lucide-react";
 
 function getState() {
@@ -56,9 +59,11 @@ export default function TopBar() {
   const schematic = useStore((s) => s.schematic);
   const theme = useStore((s) => s.theme);
   const units = useStore((s) => s.units);
+  const [guideOpen, setGuideOpen] = useState(false);
 
   return (
     <>
+      <BeadGuide open={guideOpen} onOpenChange={setGuideOpen} />
       <header className="flex h-9 items-center gap-1 border-b border-border bg-card px-2">
         <div className="mr-1 flex items-center gap-1.5 pl-1 pr-2">
           <LogoIcon />
@@ -180,6 +185,10 @@ export default function TopBar() {
         </Menu>
 
         <Menu label="Ayuda">
+          <DropdownMenuItem onClick={() => setTimeout(() => setGuideOpen(true), 10)}>
+            <BookOpen size={14} /> Guía de cuentas Miyuki
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
           <DropdownMenuLabel>Atajos</DropdownMenuLabel>
           <DropdownMenuItem disabled>Deshacer · ⌘Z</DropdownMenuItem>
           <DropdownMenuItem disabled>Rehacer · ⇧⌘Z</DropdownMenuItem>
