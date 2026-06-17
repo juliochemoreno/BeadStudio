@@ -7,9 +7,10 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 export default function ColorStrip() {
   const currentBead = useStore((s) => s.currentBead);
   const setBead = useStore((s) => s.setBead);
-  const paletteId = useStore((s) => s.paletteId);
-  const catalog = getCatalog(paletteId);
-  const shape = getBeadType(paletteId).shape;
+  const catalogId = useStore((s) => s.catalogId);
+  const beadTypeId = useStore((s) => s.beadTypeId);
+  const catalog = getCatalog(catalogId);
+  const shape = getBeadType(beadTypeId).shape;
 
   const Swatch = ({ idx }: { idx: number }) => {
     const b = catalog[idx];

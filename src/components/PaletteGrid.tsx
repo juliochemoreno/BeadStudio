@@ -30,9 +30,10 @@ const FINISH_OPTIONS: ("all" | Finish)[] = [
 export default function PaletteGrid({ columns = 6 }: { columns?: number }) {
   const currentBead = useStore((s) => s.currentBead);
   const setBead = useStore((s) => s.setBead);
-  const paletteId = useStore((s) => s.paletteId);
-  const catalog = getCatalog(paletteId);
-  const shape = getBeadType(paletteId).shape;
+  const catalogId = useStore((s) => s.catalogId);
+  const beadTypeId = useStore((s) => s.beadTypeId);
+  const catalog = getCatalog(catalogId);
+  const shape = getBeadType(beadTypeId).shape;
   const [search, setSearch] = useState("");
   const [finishFilter, setFinishFilter] = useState<"all" | Finish>("all");
 
@@ -43,7 +44,7 @@ export default function PaletteGrid({ columns = 6 }: { columns?: number }) {
         (finishFilter === "all" || b.finish === finishFilter) &&
         (!q || b.num.toLowerCase().includes(q) || b.name.toLowerCase().includes(q))
     );
-  }, [search, finishFilter, paletteId]);
+  }, [search, finishFilter, catalogId]);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-2">

@@ -1,5 +1,5 @@
 import { EMPTY } from "../data/beads";
-import { getBeadType, getCatalog, isRealCatalog } from "../data/palettes";
+import { getBeadType, getCatalog } from "../data/palettes";
 import { StitchId, stitchDef, beadOrient } from "../data/stitches";
 import { drawBead } from "./beadRender";
 import { cellAspect } from "./geometry";
@@ -9,10 +9,11 @@ function buildCanvas(
   cols: number,
   rows: number,
   stitch: StitchId,
-  paletteId: string
+  beadTypeId: string,
+  catalogId: string
 ): HTMLCanvasElement {
-  const beadType = getBeadType(paletteId);
-  const catalog = getCatalog(paletteId);
+  const beadType = getBeadType(beadTypeId);
+  const catalog = getCatalog(catalogId);
   const def = stitchDef(stitch);
   const aspect = cellAspect(def, beadType);
   const cellW = 22;
@@ -52,16 +53,17 @@ export function exportPNG(
   cols: number,
   rows: number,
   stitch: StitchId,
-  paletteId: string
+  beadTypeId: string,
+  catalogId: string
 ) {
   const a = document.createElement("a");
   a.download = "patron-beadstudio.png";
-  a.href = buildCanvas(grid, cols, rows, stitch, paletteId).toDataURL("image/png");
+  a.href = buildCanvas(grid, cols, rows, stitch, beadTypeId, catalogId).toDataURL("image/png");
   a.click();
 }
 
-function countList(grid: Uint16Array, paletteId: string) {
-  const catalog = getCatalog(paletteId);
+function countList(grid: Uint16Array, catalogId: string) {
+  const catalog = getCatalog(catalogId);
   const map = new Map<number, number>();
   for (let i = 0; i < grid.length; i++) {
     const v = grid[i];
@@ -77,16 +79,12 @@ export function printPattern(
   cols: number,
   rows: number,
   stitch: StitchId,
-  paletteId: string
+  beadTypeId: string,
+  catalogId: string
 ) {
-  const img = buildCanvas(grid, cols, rows, stitch, paletteId).toDataURL("image/png");
-  const counts = countList(grid, paletteId);
+  const img = buildCanvas(grid, cols, rows, stitch, beadTypeId, catalogId).toDataURL("image/png");
+  const counts = countList(grid, catalogId);
   const total = counts.reduce((s, x) => s + x.n, 0);
-  const disclaimer =
-    (isRealCatalog(paletteId)
-      ? ""
-      : "Códigos de color genéricos (aproximados), no equivalen a referencias de la marca. ") +
-    "Los colores son orientativos, no el color físico real.";
   const rowsHtml = counts
     .map(
       (x) =>
@@ -98,8 +96,7 @@ export function printPattern(
   win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Patrón BeadStudio</title>
   <style>
     body{font-family:system-ui,Arial,sans-serif;margin:24px;color:#111}
-    h1{font-size:18px;margin:0 0 4px} .meta{color:#666;font-size:12px;margin-bottom:4px}
-    .note{color:#9a5b00;font-size:11px;margin-bottom:16px}
+    h1{font-size:18px;margin:0 0 4px} .meta{color:#666;font-size:12px;margin-bottom:16px}
     img{max-width:100%;border:1px solid #ddd}
     table{border-collapse:collapse;margin-top:16px;font-size:12px;width:100%}
     td,th{border-bottom:1px solid #eee;padding:4px 8px;text-align:left}
@@ -109,7 +106,6 @@ export function printPattern(
   </style></head><body>
   <h1>Patrón BeadStudio</h1>
   <div class="meta">${cols} × ${rows} · ${stitchDef(stitch).label} · ${total} cuentas · ${counts.length} colores</div>
-  <div class="note">${disclaimer}</div>
   <img src="${img}"/>
   <table><thead><tr><th></th><th>Código</th><th>Color</th><th>Cant.</th></tr></thead><tbody>${rowsHtml}</tbody></table>
   <button onclick="window.print()" style="margin-top:16px;padding:8px 14px">Imprimir</button>
@@ -119,13 +115,9 @@ export function printPattern(
 }
 
 // "Word chart": la receta escrita fila por fila (RLE por color).
-export function exportWordChart(grid: Uint16Array, cols: number, rows: number, paletteId: string) {
-  const catalog = getCatalog(paletteId);
+export function exportWordChart(grid: Uint16Array, cols: number, rows: number, catalogId: string) {
+  const catalog = getCatalog(catalogId);
   const lines: string[] = ["Patrón — word chart", ""];
-  if (!isRealCatalog(paletteId)) {
-    lines.push("Aviso: códigos de color genéricos (aproximados), no equivalen a referencias de la marca.");
-  }
-  lines.push("Aviso: los colores son orientativos, no el color físico real.", "");
   for (let r = 0; r < rows; r++) {
     const parts: string[] = [];
     let run = 1;

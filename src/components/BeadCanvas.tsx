@@ -70,7 +70,8 @@ export default function BeadCanvas() {
   const stitch = useStore((s) => s.stitch);
   const cols = useStore((s) => s.cols);
   const rows = useStore((s) => s.rows);
-  const paletteId = useStore((s) => s.paletteId);
+  const beadTypeId = useStore((s) => s.beadTypeId);
+  const catalogId = useStore((s) => s.catalogId);
   const selection = useStore((s) => s.selection);
   const schematic = useStore((s) => s.schematic);
   const showNumbers = useStore((s) => s.showNumbers);
@@ -84,8 +85,8 @@ export default function BeadCanvas() {
       ? { empty: "#ededed", line: "#dcdcdc", num: "#737373", numBold: "#0a0a0a", guide: "#c4c4c4" }
       : { empty: "#1c1c1c", line: "#2a2a2a", num: "#a3a3a3", numBold: "#fafafa", guide: "#3a3a3a" };
 
-  const beadType = getBeadType(paletteId);
-  const catalog = getCatalog(paletteId);
+  const beadType = getBeadType(beadTypeId);
+  const catalog = getCatalog(catalogId);
   const def = stitchDef(stitch);
   // orient 'h' = cuenta acostada (square/loom/brick) · 'v' = parada (peyote)
   // RAW usa celdas cuadradas; las unidades se muestran con separadores (no rotando cuentas)
@@ -354,7 +355,7 @@ export default function BeadCanvas() {
   useEffect(() => {
     fit();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stitch, cols, rows, paletteId]);
+  }, [stitch, cols, rows, beadTypeId]);
 
   // cursor base según la herramienta
   useEffect(() => {
@@ -396,7 +397,7 @@ export default function BeadCanvas() {
         saveProject();
       } else if (mod && k === "p") {
         e.preventDefault(); // evitar el imprimir del navegador
-        printPattern(s.grid, s.cols, s.rows, s.stitch, s.paletteId);
+        printPattern(s.grid, s.cols, s.rows, s.stitch, s.beadTypeId, s.catalogId);
       } else if (k === "delete" || k === "backspace") {
         if (s.selection) {
           e.preventDefault();

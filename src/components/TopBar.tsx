@@ -39,20 +39,21 @@ function getState() {
   return useStore.getState();
 }
 function doExportPng() {
-  const { grid, cols, rows, stitch, paletteId } = getState();
-  exportPNG(grid, cols, rows, stitch, paletteId);
+  const { grid, cols, rows, stitch, beadTypeId, catalogId } = getState();
+  exportPNG(grid, cols, rows, stitch, beadTypeId, catalogId);
 }
 function doExportChart() {
-  const { grid, cols, rows, paletteId } = getState();
-  exportWordChart(grid, cols, rows, paletteId);
+  const { grid, cols, rows, catalogId } = getState();
+  exportWordChart(grid, cols, rows, catalogId);
 }
 function doPrint() {
-  const { grid, cols, rows, stitch, paletteId } = getState();
-  printPattern(grid, cols, rows, stitch, paletteId);
+  const { grid, cols, rows, stitch, beadTypeId, catalogId } = getState();
+  printPattern(grid, cols, rows, stitch, beadTypeId, catalogId);
 }
 
 export default function TopBar() {
   const showNumbers = useStore((s) => s.showNumbers);
+  const schematic = useStore((s) => s.schematic);
   const theme = useStore((s) => s.theme);
   const units = useStore((s) => s.units);
 
@@ -145,6 +146,12 @@ export default function TopBar() {
             onCheckedChange={() => getState().toggleNumbers()}
           >
             Numeración del grid
+          </DropdownMenuCheckboxItem>
+          <DropdownMenuCheckboxItem
+            checked={schematic}
+            onCheckedChange={() => getState().toggleSchematic()}
+          >
+            Vista esquemática (celdas planas)
           </DropdownMenuCheckboxItem>
           <DropdownMenuSeparator />
           <DropdownMenuLabel>Ajustes</DropdownMenuLabel>

@@ -1,6 +1,6 @@
 import { useStore } from "../store";
 import { SHAPE_LABEL } from "../data/beads";
-import { getBeadType, getPalette, isRealCatalog } from "../data/palettes";
+import { getBeadType, getCatalogLabel } from "../data/palettes";
 import { stitchDef } from "../data/stitches";
 import { pieceSize } from "../lib/measure";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -9,10 +9,11 @@ import { Info } from "lucide-react";
 export default function CanvasInfo() {
   const cols = useStore((s) => s.cols);
   const rows = useStore((s) => s.rows);
-  const paletteId = useStore((s) => s.paletteId);
+  const beadTypeId = useStore((s) => s.beadTypeId);
+  const catalogId = useStore((s) => s.catalogId);
   const stitch = useStore((s) => s.stitch);
   const units = useStore((s) => s.units);
-  const beadType = getBeadType(paletteId);
+  const beadType = getBeadType(beadTypeId);
   const def = stitchDef(stitch);
   const size = pieceSize(cols, rows, def, beadType, units);
 
@@ -30,8 +31,8 @@ export default function CanvasInfo() {
         <div className="mb-2 text-sm font-semibold">Detalles del patrón</div>
         <dl className="space-y-1.5 text-[13px]">
           <Item k="Puntada" v={def.label} />
-          <Item k="Paleta" v={getPalette(paletteId).label} />
-          <Item k="Colores" v={isRealCatalog(paletteId) ? "Reales" : "Genéricos (aprox.)"} />
+          <Item k="Cuenta" v={beadType.label} />
+          <Item k="Paleta" v={getCatalogLabel(catalogId)} />
           <Item k="Forma" v={SHAPE_LABEL[beadType.shape]} />
           <Item k="Tamaño cuenta" v={beadType.sizeLabel} />
           <Item k="Rejilla" v={`${cols} × ${rows}`} />

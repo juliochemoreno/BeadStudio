@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useStore } from "../store";
-import { EMPTY, FINISH_LABEL, SHAPE_LABEL } from "../data/beads";
-import { PALETTES, getBeadType, getCatalog, isRealCatalog } from "../data/palettes";
+import { EMPTY, FINISH_LABEL, SHAPE_LABEL, BEAD_TYPES } from "../data/beads";
+import { COLOR_PALETTES, getBeadType, getCatalog } from "../data/palettes";
 import { STITCHES, StitchId } from "../data/stitches";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -14,7 +14,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import PaletteGrid from "./PaletteGrid";
 import BeadSwatch from "./BeadSwatch";
-import { Grid2x2, Palette, Minus, Plus, AlertTriangle } from "lucide-react";
+import { Grid2x2, Palette, Minus, Plus, Circle } from "lucide-react";
 
 const MIN = 2;
 const MAX = 400;
@@ -23,16 +23,18 @@ export default function SidePanel() {
   const cols = useStore((s) => s.cols);
   const rows = useStore((s) => s.rows);
   const stitch = useStore((s) => s.stitch);
-  const paletteId = useStore((s) => s.paletteId);
+  const beadTypeId = useStore((s) => s.beadTypeId);
+  const catalogId = useStore((s) => s.catalogId);
   const currentBead = useStore((s) => s.currentBead);
   const rev = useStore((s) => s.rev);
   const setStitch = useStore((s) => s.setStitch);
   const setBead = useStore((s) => s.setBead);
-  const setPalette = useStore((s) => s.setPalette);
+  const setBeadType = useStore((s) => s.setBeadType);
+  const setCatalog = useStore((s) => s.setCatalog);
   const resize = useStore((s) => s.resize);
 
-  const beadType = getBeadType(paletteId);
-  const catalog = getCatalog(paletteId);
+  const beadType = getBeadType(beadTypeId);
+  const catalog = getCatalog(catalogId);
   const cur = catalog[currentBead] ?? catalog[0];
 
   const counts = useMemo(() => {
@@ -44,7 +46,7 @@ export default function SidePanel() {
     }
     return [...map.entries()].sort((a, b) => b[1] - a[1]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rev, paletteId]);
+  }, [rev, catalogId]);
   const total = counts.reduce((s, [, n]) => s + n, 0);
 
   const setCols = (n: number) => resize(Math.max(MIN, Math.min(MAX, n)), rows);
@@ -86,18 +88,18 @@ export default function SidePanel() {
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-[12px] text-muted-foreground">Cuenta / paleta</label>
-              <Select value={paletteId} onValueChange={(v) => setPalette(v)}>
+              <label className="text-[12px] text-muted-foreground">Tipo de cuenta</label>
+              <Select value={beadTypeId} onValueChange={(v) => setBeadType(v)}>
                 <SelectTrigger className="w-full">
                   <span className="flex items-center gap-2 truncate">
-                    <Palette size={14} className="flex-none text-muted-foreground" />
+                    <Circle size={14} className="flex-none text-muted-foreground" />
                     <SelectValue />
                   </span>
                 </SelectTrigger>
                 <SelectContent>
-                  {PALETTES.map((p) => (
-                    <SelectItem key={p.id} value={p.id} disabled={p.catalog === null}>
-                      {p.label}
+                  {BEAD_TYPES.map((b) => (
+                    <SelectItem key={b.id} value={b.id}>
+                      {b.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -105,15 +107,25 @@ export default function SidePanel() {
               <p className="text-[11px] text-muted-foreground">
                 {SHAPE_LABEL[beadType.shape]} · {beadType.sizeLabel}
               </p>
-              {!isRealCatalog(paletteId) && (
-                <p className="flex items-start gap-1 text-[11px] text-amber-500">
-                  <AlertTriangle size={12} className="mt-0.5 flex-none" />
-                  Colores genéricos aproximados — no son los códigos reales de la marca.
-                </p>
-              )}
-              <p className="text-[11px] text-muted-foreground">
-                El color en pantalla es orientativo, no el color físico real de la cuenta.
-              </p>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-[12px] text-muted-foreground">Paleta de color</label>
+              <Select value={catalogId} onValueChange={(v) => setCatalog(v)}>
+                <SelectTrigger className="w-full">
+                  <span className="flex items-center gap-2 truncate">
+                    <Palette size={14} className="flex-none text-muted-foreground" />
+                    <SelectValue />
+                  </span>
+                </SelectTrigger>
+                <SelectContent>
+                  {COLOR_PALETTES.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="flex gap-3">

@@ -3,11 +3,12 @@ import { useStore, ProjectData } from "../store";
 export function saveProject() {
   const s = useStore.getState();
   const data: ProjectData = {
-    version: 1,
+    version: 2,
     cols: s.cols,
     rows: s.rows,
     stitch: s.stitch,
-    paletteId: s.paletteId,
+    beadTypeId: s.beadTypeId,
+    catalogId: s.catalogId,
     grid: Array.from(s.grid),
   };
   const blob = new Blob([JSON.stringify(data)], { type: "application/json" });

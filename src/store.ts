@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { EMPTY, DEFAULT_BEAD_INDEX } from "./data/beads";
 import { StitchId } from "./data/stitches";
-import { getCatalog, getPalette } from "./data/palettes";
+import { getCatalog, legacyPalette, isColorPalette } from "./data/palettes";
 import { hexToLab, nearestBead } from "./lib/color";
 import {
   Cell,
@@ -38,7 +38,8 @@ const SHAPE_FILLABLE: ToolId[] = ["rect", "oval", "triangle", "diamond"];
 interface State {
   cols: number;
   rows: number;
-  paletteId: string;
+  beadTypeId: string; // tipo de cuenta (geometría: tamaño/forma)
+  catalogId: string; // paleta de color (catálogo)
   stitch: StitchId;
   grid: Uint16Array;
   currentBead: number;
@@ -66,7 +67,8 @@ interface State {
   toggleSchematic: () => void;
   setBead: (i: number) => void;
   setStitch: (s: StitchId) => void;
-  setPalette: (id: string) => void;
+  setBeadType: (id: string) => void;
+  setCatalog: (id: string) => void;
   resize: (cols: number, rows: number) => void;
   beginStroke: () => void;
   paintCell: (c: number, r: number, value: number) => void;
@@ -94,7 +96,9 @@ export interface ProjectData {
   cols: number;
   rows: number;
   stitch: StitchId;
-  paletteId: string;
+  beadTypeId?: string;
+  catalogId?: string;
+  paletteId?: string; // formato anterior (geometría + color juntos)
   grid: number[];
 }
 
@@ -122,7 +126,8 @@ export const useStore = create<State>()(
     (set, get) => ({
   cols: 70,
   rows: 20,
-  paletteId: "delica11",
+  beadTypeId: "delica11",
+  catalogId: "delica",
   stitch: "square",
   grid: new Uint16Array(70 * 20).fill(EMPTY),
   currentBead: DEFAULT_BEAD_INDEX, // DB-1006 Metallic Blue Green Gold AB
@@ -184,15 +189,16 @@ export const useStore = create<State>()(
     set((s) => ({ currentBead: i, recent: [i, ...s.recent.filter((x) => x !== i)].slice(0, 14) })),
   setStitch: (s) => set({ stitch: s, rev: get().rev + 1 }),
 
-  setPalette: (id) => {
-    const p = getPalette(id);
-    if (p.catalog === null) return; // placeholder sin datos de color
+  // cambiar el tipo de cuenta solo afecta la geometría (mismos colores)
+  setBeadType: (id) => set((s) => ({ beadTypeId: id, rev: s.rev + 1 })),
+
+  setCatalog: (id) => {
     const cur = get();
-    const oldCat = getCatalog(cur.paletteId);
+    const oldCat = getCatalog(cur.catalogId);
     const newCat = getCatalog(id);
     if (oldCat === newCat) {
-      // mismo catálogo (sólo cambia geometría)
-      set({ paletteId: id, rev: cur.rev + 1 });
+      // mismo catálogo de color (no hay que remapear)
+      set({ catalogId: id, rev: cur.rev + 1 });
       return;
     }
     // catálogo distinto: remapear cada cuenta al color más parecido (CIELAB)
@@ -211,7 +217,7 @@ export const useStore = create<State>()(
     for (let i = 0; i < ng.length; i++) ng[i] = remap(cur.grid[i]);
     const newCurrent = remap(cur.currentBead);
     set({
-      paletteId: id,
+      catalogId: id,
       grid: ng,
       currentBead: newCurrent,
       recent: [newCurrent],
@@ -431,16 +437,24 @@ export const useStore = create<State>()(
     const len = data.cols * data.rows;
     const grid = new Uint16Array(len).fill(EMPTY);
     for (let i = 0; i < Math.min(len, data.grid.length); i++) grid[i] = data.grid[i];
+    // formato nuevo (beadTypeId + catalogId) con migración del antiguo (paletteId)
+    const legacy = data.paletteId ? legacyPalette(data.paletteId) : undefined;
+    const beadTypeId = data.beadTypeId ?? legacy?.beadTypeId ?? "delica11";
+    let catalogId = data.catalogId ?? legacy?.catalog ?? "delica";
+    if (!isColorPalette(catalogId)) catalogId = "generic";
+    const cat = getCatalog(catalogId);
     set((s) => ({
       cols: data.cols,
       rows: data.rows,
       stitch: data.stitch,
-      paletteId: getPalette(data.paletteId).id,
+      beadTypeId,
+      catalogId,
       grid,
       selection: null,
       past: [],
       future: [],
-      recent: [s.currentBead],
+      currentBead: s.currentBead < cat.length ? s.currentBead : 0,
+      recent: [s.currentBead < cat.length ? s.currentBead : 0],
       rev: s.rev + 1,
     }));
   },
@@ -453,14 +467,26 @@ export const useStore = create<State>()(
         showNumbers: s.showNumbers,
         shapeFill: s.shapeFill,
         schematic: s.schematic,
-        paletteId: s.paletteId,
+        beadTypeId: s.beadTypeId,
+        catalogId: s.catalogId,
         cols: s.cols,
         rows: s.rows,
       }),
       onRehydrateStorage: () => (state) => {
         if (!state) return;
-        // el color actual debe ser válido para el catálogo de la paleta guardada
-        const cat = getCatalog(state.paletteId);
+        // migración del formato anterior (paletteId único) a beadTypeId + catalogId
+        const legacyId = (state as unknown as { paletteId?: string }).paletteId;
+        if (legacyId) {
+          const p = legacyPalette(legacyId);
+          if (p) {
+            state.beadTypeId = p.beadTypeId;
+            state.catalogId = p.catalog ?? "generic";
+          }
+          delete (state as unknown as { paletteId?: string }).paletteId;
+        }
+        if (!isColorPalette(state.catalogId)) state.catalogId = "generic";
+        // el color actual debe ser válido para el catálogo guardado
+        const cat = getCatalog(state.catalogId);
         if (state.currentBead >= cat.length) state.currentBead = 0;
         state.recent = state.recent.filter((i) => i < cat.length);
         if (state.recent.length === 0) state.recent = [state.currentBead];

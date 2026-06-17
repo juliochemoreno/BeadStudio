@@ -44,10 +44,11 @@ export const GENERIC_BEADS: Bead[] = [
   { num: "G-40", name: "Oro", hex: "#cda94b", finish: "metallic" },
 ];
 
-// Cada marca tiene su propio identificador de catálogo de color. Hoy solo "delica"
-// tiene datos reales; el resto comparten los colores genéricos (placeholder) hasta
-// digitalizar las sample cards de cada marca. Para enchufar datos reales basta con
-// rellenar `beads` del catálogo correspondiente en CATALOGS y poner `real: true`.
+// El "tipo de cuenta" (geometría: tamaño + forma) y la "paleta de color" (catálogo)
+// son ahora dos ejes independientes. Cada marca tiene su propio catálogo de color;
+// hoy solo "delica" tiene datos reales, el resto comparten los colores genéricos
+// (placeholder). Para enchufar datos reales basta con rellenar `beads` del catálogo
+// correspondiente en CATALOGS y poner `real: true`: aparecerá solo en el selector.
 export type CatalogId =
   | "delica"
   | "miyukiRound"
@@ -57,31 +58,60 @@ export type CatalogId =
   | "preciosa"
   | "generic";
 
-interface CatalogDef {
+export interface CatalogDef {
+  id: CatalogId;
+  label: string;
   beads: Bead[];
   real: boolean; // true = códigos y colores de la marca; false = genéricos aproximados
 }
 
-// Registro de catálogos de color por marca. Los genéricos comparten GENERIC_BEADS
-// como fallback marcado (real: false) hasta que existan datos reales.
 const CATALOGS: Record<CatalogId, CatalogDef> = {
-  delica: { beads: BEADS, real: true },
-  miyukiRound: { beads: GENERIC_BEADS, real: false },
-  tohoAiko: { beads: GENERIC_BEADS, real: false },
-  tohoTreasures: { beads: GENERIC_BEADS, real: false },
-  tohoRounds: { beads: GENERIC_BEADS, real: false },
-  preciosa: { beads: GENERIC_BEADS, real: false },
-  generic: { beads: GENERIC_BEADS, real: false },
+  delica: { id: "delica", label: "Miyuki Delica", beads: BEADS, real: true },
+  miyukiRound: { id: "miyukiRound", label: "Miyuki Round", beads: GENERIC_BEADS, real: false },
+  tohoAiko: { id: "tohoAiko", label: "Toho Aiko", beads: GENERIC_BEADS, real: false },
+  tohoTreasures: { id: "tohoTreasures", label: "Toho Treasures", beads: GENERIC_BEADS, real: false },
+  tohoRounds: { id: "tohoRounds", label: "Toho Rounds", beads: GENERIC_BEADS, real: false },
+  preciosa: { id: "preciosa", label: "Preciosa", beads: GENERIC_BEADS, real: false },
+  generic: { id: "generic", label: "Colores genéricos", beads: GENERIC_BEADS, real: false },
 };
 
+// Paletas de color ofrecidas en el selector: las que tienen datos reales propios
+// más la genérica. Las marcas sin datos reales no se listan como paleta de color
+// (su tamaño/forma vive en el "tipo de cuenta").
+export const COLOR_PALETTES: CatalogDef[] = Object.values(CATALOGS).filter(
+  (c) => c.real || c.id === "generic"
+);
+
+export const DEFAULT_CATALOG_ID: CatalogId = "delica";
+
+export function getCatalog(catalogId: string): Bead[] {
+  return (CATALOGS[catalogId as CatalogId] ?? CATALOGS.generic).beads;
+}
+
+export function getCatalogLabel(catalogId: string): string {
+  return (CATALOGS[catalogId as CatalogId] ?? CATALOGS.generic).label;
+}
+
+// ¿el id corresponde a una paleta de color ofrecida en el selector?
+export function isColorPalette(catalogId: string): boolean {
+  return COLOR_PALETTES.some((c) => c.id === catalogId);
+}
+
+// Tipo de cuenta (geometría: tamaño + forma).
+export function getBeadType(beadTypeId: string): BeadType {
+  return BEAD_TYPES.find((b) => b.id === beadTypeId) ?? BEAD_TYPES[0];
+}
+
+// --- Compatibilidad: paletas antiguas (geometría + color en una sola entrada).
+// Se conservan solo para migrar proyectos y ajustes guardados con el formato previo.
 export interface Palette {
   id: string;
   label: string;
-  beadTypeId: string; // geometría (tamaño/forma)
-  catalog: CatalogId | null; // null = sin datos de color (placeholder)
+  beadTypeId: string;
+  catalog: CatalogId | null;
 }
 
-export const PALETTES: Palette[] = [
+const LEGACY_PALETTES: Palette[] = [
   { id: "delica11", label: "Miyuki Delicas (Size 11)", beadTypeId: "delica11", catalog: "delica" },
   { id: "delica10", label: "Miyuki Delicas (Size 10)", beadTypeId: "delica10", catalog: "delica" },
   { id: "delica15", label: "Miyuki Delicas (Size 15)", beadTypeId: "delica15", catalog: "delica" },
@@ -101,22 +131,6 @@ export const PALETTES: Palette[] = [
   { id: "generic", label: "Colores genéricos", beadTypeId: "generic", catalog: "generic" },
 ];
 
-export function getPalette(id: string): Palette {
-  return PALETTES.find((p) => p.id === id) ?? PALETTES[0];
-}
-
-export function getCatalog(paletteId: string): Bead[] {
-  const c = getPalette(paletteId).catalog;
-  return CATALOGS[c ?? "generic"].beads;
-}
-
-// ¿la paleta sirve los colores reales de la marca, o genéricos aproximados?
-export function isRealCatalog(paletteId: string): boolean {
-  const c = getPalette(paletteId).catalog;
-  return c != null && CATALOGS[c].real;
-}
-
-export function getBeadType(paletteId: string): BeadType {
-  const p = getPalette(paletteId);
-  return BEAD_TYPES.find((b) => b.id === p.beadTypeId) ?? BEAD_TYPES[0];
+export function legacyPalette(id: string): Palette | undefined {
+  return LEGACY_PALETTES.find((p) => p.id === id);
 }
