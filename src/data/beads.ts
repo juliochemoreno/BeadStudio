@@ -54,17 +54,17 @@ export const BEAD_TYPES: BeadType[] = [
   // Cilíndricas (tubo de lados rectos)
   { id: "delica11", label: "Miyuki Delica 11/0", shape: "cylinder", pitchX: 1.354, pitchY: 1.749, hole: 0.8, sizeLabel: "1.6 × 1.3 mm" },
   { id: "delica10", label: "Miyuki Delica 10/0", shape: "cylinder", pitchX: 1.7, pitchY: 2.1, hole: 1.0, sizeLabel: "2.2 × 1.2 mm" },
-  { id: "delica15", label: "Miyuki Delica 15/0", shape: "cylinder", pitchX: 1.0, pitchY: 1.3, hole: 0.7, sizeLabel: "1.3 × 1.1 mm" },
+  { id: "delica15", label: "Miyuki Delica 15/0", shape: "cylinder", pitchX: 1.0, pitchY: 1.3, hole: 0.65, sizeLabel: "1.3 × 1.1 mm" },
   { id: "delica8", label: "Miyuki Delica 8/0", shape: "cylinder", pitchX: 2.4, pitchY: 2.6, hole: 1.5, sizeLabel: "2.5 × 2.5 mm" }, // valor mayoritario/oficial (3.0×2.7 es minoritario)
   { id: "tohoAiko", label: "Toho Aiko", shape: "cylinder", pitchX: 1.43, pitchY: 1.85, hole: 0.8, sizeLabel: "1.8 × 1.0 mm" },
   { id: "tohoTreasures", label: "Toho Treasures", shape: "cylinder", pitchX: 1.5, pitchY: 1.95, hole: 0.9, sizeLabel: "1.8 × 1.5 mm" },
   // Redondas (rocallas)
   { id: "round15", label: "Round Rocaille 15/0", shape: "round", pitchX: 1.4, pitchY: 1.5, hole: 0.7, sizeLabel: "1.5 × 1.0 mm" },
-  { id: "round11", label: "Round Rocaille 11/0", shape: "round", pitchX: 1.9, pitchY: 2.0, hole: 1.0, sizeLabel: "2.0 × 1.3 mm" },
+  { id: "round11", label: "Round Rocaille 11/0", shape: "round", pitchX: 1.9, pitchY: 2.0, hole: 0.8, sizeLabel: "2.0 × 1.3 mm" },
   { id: "round10", label: "Round Rocaille 10/0", shape: "round", pitchX: 2.1, pitchY: 2.2, hole: 1.0, sizeLabel: "≈2.3 mm" },
   { id: "round8", label: "Round Rocaille 8/0", shape: "round", pitchX: 2.7, pitchY: 2.9, hole: 1.1, sizeLabel: "3.0 × 2.0 mm" },
-  { id: "round6", label: "Round Rocaille 6/0", shape: "round", pitchX: 3.7, pitchY: 3.9, hole: 1.3, sizeLabel: "4.0 × 3.0 mm" },
-  { id: "round5", label: "Round Rocaille 5/0", shape: "round", pitchX: 4.6, pitchY: 4.9, hole: 1.6, sizeLabel: "5.0 × 4.0 mm" },
+  { id: "round6", label: "Round Rocaille 6/0", shape: "round", pitchX: 3.7, pitchY: 3.9, hole: 1.5, sizeLabel: "4.0 × 3.0 mm" },
+  { id: "round5", label: "Round Rocaille 5/0", shape: "round", pitchX: 4.6, pitchY: 4.9, hole: 2.0, sizeLabel: "5.0 × 4.0 mm" },
   { id: "round9mm", label: "Round Rocaille 9 mm", shape: "round", pitchX: 8.5, pitchY: 8.5, hole: 2.5, sizeLabel: "9 mm" },
   { id: "toho11", label: "Toho Round 11/0", shape: "round", pitchX: 2.1, pitchY: 2.1, hole: 1.0, sizeLabel: "2.3 × 1.3 mm" },
   // Barril (pony beads)
