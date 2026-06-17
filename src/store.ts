@@ -46,6 +46,7 @@ interface State {
   selection: Selection | null;
   clipboard: { buf: Uint16Array; w: number; h: number } | null;
   shapeFill: boolean;
+  schematic: boolean; // vista esquemática (celdas planas) vs realista
   showNumbers: boolean;
   theme: "dark" | "light";
   units: "in" | "cm";
@@ -62,6 +63,7 @@ interface State {
   toggleTheme: () => void;
   toggleUnits: () => void;
   toggleShapeFill: () => void;
+  toggleSchematic: () => void;
   setBead: (i: number) => void;
   setStitch: (s: StitchId) => void;
   setPalette: (id: string) => void;
@@ -128,6 +130,7 @@ export const useStore = create<State>()(
   selection: null,
   clipboard: null,
   shapeFill: true,
+  schematic: false,
   showNumbers: true,
   theme: "dark",
   units: "cm",
@@ -176,6 +179,7 @@ export const useStore = create<State>()(
   toggleTheme: () => set((s) => ({ theme: s.theme === "dark" ? "light" : "dark" })),
   toggleUnits: () => set((s) => ({ units: s.units === "in" ? "cm" : "in" })),
   toggleShapeFill: () => set((s) => ({ shapeFill: !s.shapeFill })),
+  toggleSchematic: () => set((s) => ({ schematic: !s.schematic })),
   setBead: (i) =>
     set((s) => ({ currentBead: i, recent: [i, ...s.recent.filter((x) => x !== i)].slice(0, 14) })),
   setStitch: (s) => set({ stitch: s, rev: get().rev + 1 }),
@@ -448,8 +452,24 @@ export const useStore = create<State>()(
         units: s.units,
         showNumbers: s.showNumbers,
         shapeFill: s.shapeFill,
+        schematic: s.schematic,
         paletteId: s.paletteId,
+        cols: s.cols,
+        rows: s.rows,
       }),
+      onRehydrateStorage: () => (state) => {
+        if (!state) return;
+        // el color actual debe ser válido para el catálogo de la paleta guardada
+        const cat = getCatalog(state.paletteId);
+        if (state.currentBead >= cat.length) state.currentBead = 0;
+        state.recent = state.recent.filter((i) => i < cat.length);
+        if (state.recent.length === 0) state.recent = [state.currentBead];
+        // cols/rows se persisten pero el lienzo no: recrear un grid vacío del
+        // tamaño guardado para que grid.length siga coincidiendo con cols*rows.
+        state.cols = Math.max(2, Math.min(400, Math.round(state.cols)));
+        state.rows = Math.max(2, Math.min(400, Math.round(state.rows)));
+        state.grid = new Uint16Array(state.cols * state.rows).fill(EMPTY);
+      },
     }
   )
 );
