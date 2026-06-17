@@ -151,6 +151,7 @@ export function drawBead(
     case "ab":
       iridescent(ctx, x, y, w, h);
       break;
+    case "silver-lined":
     case "silverlined": {
       const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(w, h) * 0.5);
       g.addColorStop(0, "rgba(255,255,255,0.85)");

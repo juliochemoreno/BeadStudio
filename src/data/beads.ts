@@ -19,11 +19,13 @@ export type Finish =
   | "matte"
   | "ab"
   | "silverlined"
+  | "silver-lined" // alias con guion usado en los catálogos reales
   | "ceylon"
   | "luster"
   | "metallic"
   | "galvanized"
-  | "lined";
+  | "lined"
+  | "opal";
 
 export const FINISH_LABEL: Record<Finish, string> = {
   opaque: "Opaco",
@@ -36,6 +38,8 @@ export const FINISH_LABEL: Record<Finish, string> = {
   metallic: "Metálico",
   galvanized: "Galvanizado",
   lined: "Color-lined",
+  "silver-lined": "Forrada en plata",
+  opal: "Ópalo",
 };
 
 export interface BeadType {
@@ -53,20 +57,23 @@ export interface BeadType {
 export const BEAD_TYPES: BeadType[] = [
   // Cilíndricas (tubo de lados rectos)
   { id: "delica11", label: "Miyuki Delica 11/0", shape: "cylinder", pitchX: 1.354, pitchY: 1.749, hole: 0.8, sizeLabel: "1.6 × 1.3 mm" },
-  { id: "delica10", label: "Miyuki Delica 10/0", shape: "cylinder", pitchX: 1.7, pitchY: 2.1, hole: 1.0, sizeLabel: "2.2 × 1.2 mm" },
+  { id: "delica10", label: "Miyuki Delica 10/0", shape: "cylinder", pitchX: 1.7, pitchY: 2.1, hole: 1.0, sizeLabel: "2.3 × 1.2 mm" },
   { id: "delica15", label: "Miyuki Delica 15/0", shape: "cylinder", pitchX: 1.0, pitchY: 1.3, hole: 0.65, sizeLabel: "1.3 × 1.1 mm" },
-  { id: "delica8", label: "Miyuki Delica 8/0", shape: "cylinder", pitchX: 2.4, pitchY: 2.6, hole: 1.5, sizeLabel: "2.5 × 2.5 mm" }, // valor mayoritario/oficial (3.0×2.7 es minoritario)
+  { id: "delica8", label: "Miyuki Delica 8/0", shape: "cylinder", pitchX: 2.4, pitchY: 2.6, hole: 1.5, sizeLabel: "2.5 × 2.5 mm" }, // fuentes en conflicto: 2.5×2.5 (CJ Beaders) vs 3.0×2.7 (Fire Mountain/Beadaholique)
   { id: "tohoAiko", label: "Toho Aiko", shape: "cylinder", pitchX: 1.43, pitchY: 1.85, hole: 0.8, sizeLabel: "1.8 × 1.0 mm" },
   { id: "tohoTreasures", label: "Toho Treasures", shape: "cylinder", pitchX: 1.5, pitchY: 1.95, hole: 0.9, sizeLabel: "1.8 × 1.5 mm" },
-  // Redondas (rocallas)
-  { id: "round15", label: "Round Rocaille 15/0", shape: "round", pitchX: 1.4, pitchY: 1.5, hole: 0.7, sizeLabel: "1.5 × 1.0 mm" },
-  { id: "round11", label: "Round Rocaille 11/0", shape: "round", pitchX: 1.9, pitchY: 2.0, hole: 0.8, sizeLabel: "2.0 × 1.3 mm" },
-  { id: "round10", label: "Round Rocaille 10/0", shape: "round", pitchX: 2.1, pitchY: 2.2, hole: 1.0, sizeLabel: "≈2.3 mm" },
-  { id: "round8", label: "Round Rocaille 8/0", shape: "round", pitchX: 2.7, pitchY: 2.9, hole: 1.1, sizeLabel: "3.0 × 2.0 mm" },
-  { id: "round6", label: "Round Rocaille 6/0", shape: "round", pitchX: 3.7, pitchY: 3.9, hole: 1.5, sizeLabel: "4.0 × 3.0 mm" },
-  { id: "round5", label: "Round Rocaille 5/0", shape: "round", pitchX: 4.6, pitchY: 4.9, hole: 2.0, sizeLabel: "5.0 × 4.0 mm" },
-  { id: "round9mm", label: "Round Rocaille 9 mm", shape: "round", pitchX: 8.5, pitchY: 8.5, hole: 2.5, sizeLabel: "9 mm" },
-  { id: "toho11", label: "Toho Round 11/0", shape: "round", pitchX: 2.1, pitchY: 2.1, hole: 1.0, sizeLabel: "2.3 × 1.3 mm" },
+  { id: "tradCyl11", label: "Tradicional 11/0 (11/pulgada)", shape: "cylinder", pitchX: 2.309, pitchY: 2.309, hole: 1.0, sizeLabel: "2.3 × 2.3 mm" },
+  // Redondas (rocallas) — diámetros oficiales Miyuki (tabla 2024)
+  { id: "round15", label: "Round Rocaille 15/0", shape: "round", pitchX: 1.5, pitchY: 1.5, hole: 0.7, sizeLabel: "1.5 mm" },
+  { id: "round11", label: "Round Rocaille 11/0", shape: "round", pitchX: 2.0, pitchY: 2.0, hole: 0.8, sizeLabel: "2.0 mm" },
+  { id: "round10", label: "Round Rocaille 10/0", shape: "round", pitchX: 2.2, pitchY: 2.2, hole: 1.0, sizeLabel: "2.2 mm" },
+  { id: "round8",  label: "Round Rocaille 8/0",  shape: "round", pitchX: 3.0, pitchY: 3.0, hole: 1.1, sizeLabel: "3.0 mm" },
+  { id: "round6",  label: "Round Rocaille 6/0",  shape: "round", pitchX: 4.0, pitchY: 4.0, hole: 1.5, sizeLabel: "4.0 mm" },
+  { id: "round5",  label: "Round Rocaille 5/0",  shape: "round", pitchX: 5.0, pitchY: 5.0, hole: 2.0, sizeLabel: "5.0 mm" },
+  { id: "round1",  label: "Round Rocaille 1/0",  shape: "round", pitchX: 6.5, pitchY: 6.5, hole: 2.9, sizeLabel: "6.5 mm" },
+  { id: "round9mm",label: "Round Rocaille 9 mm", shape: "round", pitchX: 9.0, pitchY: 9.0, hole: 2.5, sizeLabel: "9 mm" },
+  { id: "toho11",  label: "Toho Round 11/0",     shape: "round", pitchX: 2.0, pitchY: 2.0, hole: 0.8, sizeLabel: "2.0 mm" },
+  { id: "tradRound11", label: "Tradicional 11/0 (11/pulgada)", shape: "round", pitchX: 2.309, pitchY: 2.309, hole: 1.0, sizeLabel: "2.3 mm" },
   // Barril (pony beads)
   { id: "pony9", label: "Pony 9 mm", shape: "barrel", pitchX: 5.4, pitchY: 3.6, hole: 4.0, sizeLabel: "9 × 6 mm" },
   // Genérico
@@ -179,6 +186,33 @@ export const BEADS: Bead[] = [
   { num: "DB-0062", name: "Lined Lt Cranberry", hex: "#c45a7a", finish: "lined" },
   { num: "DB-0287", name: "Lined Sapphire", hex: "#33508f", finish: "lined" },
   { num: "DB-0285", name: "Lined Aqua / Lime", hex: "#5bbf8f", finish: "lined" },
+
+  // --- Recientes ---
+  { num: "DB-1315", name: "Transparent Red Violet", hex: "#7F4E83", finish: "transparent" },
+  { num: "DB-1379", name: "Opaque Red Violet", hex: "#863B8B", finish: "opaque" },
+  { num: "DB-1564", name: "Opaque Cadillac Red Luster", hex: "#942633", finish: "luster" },
+  { num: "DB-0159", name: "Opaque Vermillion Red AB", hex: "#CA2534", finish: "ab" },
+  { num: "DB-0162", name: "Opaque Red AB", hex: "#B21B35", finish: "ab" },
+  { num: "DB-0172", name: "Transparent Red AB", hex: "#B52033", finish: "ab" },
+  { num: "DB-1751", name: "Red Lined Topaz AB", hex: "#AE443C", finish: "ab" },
+  { num: "DB-1780", name: "White Lined Flame Red AB", hex: "#CC3939", finish: "ab" },
+  { num: "DB-2051", name: "Neon Poppy Red", hex: "#E83935", finish: "opaque" },
+  { num: "DB-0214", name: "Opaque Red Luster", hex: "#981829", finish: "luster" },
+  { num: "DB-2263", name: "Opaque Red Picasso", hex: "#68252C", finish: "opaque" },
+  { num: "DB-2308", name: "Matte Opaque Glazed Trillium Red AB", hex: "#962C3D", finish: "matte" },
+  { num: "DB-2354", name: "Opaque Shanghai Red Duracoat", hex: "#BA252F", finish: "opaque" },
+  { num: "DB-2375", name: "Color Lined Red", hex: "#C5232A", finish: "lined" },
+  { num: "DB-0295", name: "Lined Red AB", hex: "#BB2C39", finish: "ab" },
+  { num: "DB-0362", name: "Opaque Red Satin", hex: "#AD1E35", finish: "opaque" },
+  { num: "DB-0378", name: "Matte Metallic Brick Red", hex: "#832F34", finish: "matte" },
+  { num: "DB-0506", name: "24kt Red Gold AB", hex: "#AA6A4D", finish: "ab" },
+  { num: "DB-0602", name: "Silver Lined Red", hex: "#BF1728", finish: "silverlined" },
+  { num: "DB-0603", name: "Silver Lined Brick Red", hex: "#9A1621", finish: "silverlined" },
+  { num: "DB-0683", name: "Frosted Silver Lined Red Orange", hex: "#D6412D", finish: "matte" },
+  { num: "DB-0745", name: "Matte Transparent Red Orange", hex: "#C13329", finish: "matte" },
+  { num: "DB-0757", name: "Matte Opaque Vermillion Red", hex: "#C32B2B", finish: "matte" },
+  { num: "DB-0774", name: "Frosted Transparent Red", hex: "#C62934", finish: "matte" },
+  { num: "DB-0791", name: "Frosted Opaque Bright Red", hex: "#C81D26", finish: "matte" },
 ];
 
 export const DEFAULT_BEAD_INDEX = Math.max(
