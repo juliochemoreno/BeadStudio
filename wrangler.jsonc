@@ -1,0 +1,11 @@
+{
+  // Despliegue como sitio estático (SPA) en Cloudflare Workers Static Assets.
+  // Sin "main" ni "binding": es un Worker solo-assets, sirve el build de Vite (dist/).
+  // "single-page-application" hace que cualquier ruta no encontrada devuelva index.html.
+  "name": "beadstudio",
+  "compatibility_date": "2026-06-17",
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "single-page-application"
+  }
+}
