@@ -27,10 +27,6 @@ function roundRectPath(ctx: CanvasRenderingContext2D, x: number, y: number, w: n
   ctx.arcTo(x, y, x + w, y, r);
   ctx.closePath();
 }
-function ellipsePath(ctx: CanvasRenderingContext2D, cx: number, cy: number, rx: number, ry: number) {
-  ctx.beginPath();
-  ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
-}
 
 function iridescent(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number) {
   const g = ctx.createLinearGradient(x, y, x + w, y + h);
@@ -71,7 +67,8 @@ export function drawBead(
   ctx.save();
 
   if (shape === "cylinder") {
-    const r = Math.min(w, h) * 0.32;
+    // Delica: azulejo casi cuadrado, esquinas apenas redondeadas
+    const r = Math.min(w, h) * 0.14;
     roundRectPath(ctx, x, y, w, h, r);
     ctx.clip();
     const horizontal = orient === "h";
@@ -123,8 +120,8 @@ export function drawBead(
     ctx.fillRect(x, y, w, h);
     ctx.globalAlpha = 1;
   } else {
-    // rocalla redonda: esfera achatada
-    ellipsePath(ctx, cx, cy, w / 2, h / 2);
+    // rocalla redonda: cojín redondeado (más cuerpo que una elipse, no un círculo plano)
+    roundRectPath(ctx, x, y, w, h, Math.min(w, h) * 0.4);
     ctx.clip();
     const rad = ctx.createRadialGradient(
       cx - w * 0.22,
@@ -212,9 +209,9 @@ export function drawBead(
 
   // contorno sutil para separar
   ctx.save();
-  if (shape === "cylinder") roundRectPath(ctx, x, y, w, h, Math.min(w, h) * 0.32);
+  if (shape === "cylinder") roundRectPath(ctx, x, y, w, h, Math.min(w, h) * 0.14);
   else if (shape === "barrel") roundRectPath(ctx, x, y, w, h, Math.min(w, h) * 0.45);
-  else ellipsePath(ctx, cx, cy, w / 2, h / 2);
+  else roundRectPath(ctx, x, y, w, h, Math.min(w, h) * 0.4);
   ctx.lineWidth = 1;
   ctx.strokeStyle = "rgba(0,0,0,0.28)";
   ctx.stroke();
