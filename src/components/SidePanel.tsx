@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useStore } from "../store";
-import { EMPTY, FINISH_LABEL } from "../data/beads";
-import { PALETTES, getBeadType, getCatalog } from "../data/palettes";
+import { EMPTY, FINISH_LABEL, SHAPE_LABEL } from "../data/beads";
+import { PALETTES, getBeadType, getCatalog, isRealCatalog } from "../data/palettes";
 import { STITCHES, StitchId } from "../data/stitches";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -14,7 +14,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import PaletteGrid from "./PaletteGrid";
 import BeadSwatch from "./BeadSwatch";
-import { Grid2x2, Palette, Minus, Plus } from "lucide-react";
+import { Grid2x2, Palette, Minus, Plus, AlertTriangle } from "lucide-react";
 
 const MIN = 2;
 const MAX = 400;
@@ -103,7 +103,16 @@ export default function SidePanel() {
                 </SelectContent>
               </Select>
               <p className="text-[11px] text-muted-foreground">
-                {beadType.shape === "cylinder" ? "Cilíndrica" : "Redonda"} · {beadType.sizeLabel}
+                {SHAPE_LABEL[beadType.shape]} · {beadType.sizeLabel}
+              </p>
+              {!isRealCatalog(paletteId) && (
+                <p className="flex items-start gap-1 text-[11px] text-amber-500">
+                  <AlertTriangle size={12} className="mt-0.5 flex-none" />
+                  Colores genéricos aproximados — no son los códigos reales de la marca.
+                </p>
+              )}
+              <p className="text-[11px] text-muted-foreground">
+                El color en pantalla es orientativo, no el color físico real de la cuenta.
               </p>
             </div>
 

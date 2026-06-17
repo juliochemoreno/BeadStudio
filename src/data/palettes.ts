@@ -44,7 +44,35 @@ export const GENERIC_BEADS: Bead[] = [
   { num: "G-40", name: "Oro", hex: "#cda94b", finish: "metallic" },
 ];
 
-export type CatalogId = "delica" | "generic";
+// Cada marca tiene su propio identificador de catálogo de color. Hoy solo "delica"
+// tiene datos reales; el resto comparten los colores genéricos (placeholder) hasta
+// digitalizar las sample cards de cada marca. Para enchufar datos reales basta con
+// rellenar `beads` del catálogo correspondiente en CATALOGS y poner `real: true`.
+export type CatalogId =
+  | "delica"
+  | "miyukiRound"
+  | "tohoAiko"
+  | "tohoTreasures"
+  | "tohoRounds"
+  | "preciosa"
+  | "generic";
+
+interface CatalogDef {
+  beads: Bead[];
+  real: boolean; // true = códigos y colores de la marca; false = genéricos aproximados
+}
+
+// Registro de catálogos de color por marca. Los genéricos comparten GENERIC_BEADS
+// como fallback marcado (real: false) hasta que existan datos reales.
+const CATALOGS: Record<CatalogId, CatalogDef> = {
+  delica: { beads: BEADS, real: true },
+  miyukiRound: { beads: GENERIC_BEADS, real: false },
+  tohoAiko: { beads: GENERIC_BEADS, real: false },
+  tohoTreasures: { beads: GENERIC_BEADS, real: false },
+  tohoRounds: { beads: GENERIC_BEADS, real: false },
+  preciosa: { beads: GENERIC_BEADS, real: false },
+  generic: { beads: GENERIC_BEADS, real: false },
+};
 
 export interface Palette {
   id: string;
@@ -53,24 +81,24 @@ export interface Palette {
   catalog: CatalogId | null; // null = sin datos de color (placeholder)
 }
 
-// catalog "delica" = colores reales (Miyuki Delica). "generic" = aproximados
-// hasta digitalizar las sample cards de cada marca.
 export const PALETTES: Palette[] = [
-  { id: "delica11", label: "Miyuki Delica 11/0", beadTypeId: "delica11", catalog: "delica" },
-  { id: "delica10", label: "Miyuki Delica 10/0", beadTypeId: "delica10", catalog: "delica" },
-  { id: "delica15", label: "Miyuki Delica 15/0", beadTypeId: "delica15", catalog: "delica" },
-  { id: "delica8", label: "Miyuki Delica 8/0", beadTypeId: "delica8", catalog: "delica" },
-  { id: "round11", label: "Miyuki Round Rocaille 11/0", beadTypeId: "round11", catalog: "generic" },
-  { id: "round15", label: "Miyuki Round Rocaille 15/0", beadTypeId: "round15", catalog: "generic" },
-  { id: "round8", label: "Miyuki Round Rocaille 8/0", beadTypeId: "round8", catalog: "generic" },
-  { id: "round6", label: "Miyuki Round Rocaille 6/0", beadTypeId: "round6", catalog: "generic" },
-  { id: "preciosa11", label: "Preciosa Rocaille 11/0", beadTypeId: "round11", catalog: "generic" },
-  { id: "preciosa8", label: "Preciosa Rocaille 8/0", beadTypeId: "round8", catalog: "generic" },
-  { id: "tohoTreasures", label: "Toho Treasures 11/0", beadTypeId: "tohocyl", catalog: "generic" },
-  { id: "tohoAiko", label: "Toho Aiko 11/0", beadTypeId: "tohocyl", catalog: "generic" },
-  { id: "tohoRound11", label: "Toho Round 11/0", beadTypeId: "toho11", catalog: "generic" },
-  { id: "tohoRound8", label: "Toho Round 8/0", beadTypeId: "round8", catalog: "generic" },
-  { id: "pony9", label: "Pony Beads 9 mm", beadTypeId: "pony9", catalog: "generic" },
+  { id: "delica11", label: "Miyuki Delicas (Size 11)", beadTypeId: "delica11", catalog: "delica" },
+  { id: "delica10", label: "Miyuki Delicas (Size 10)", beadTypeId: "delica10", catalog: "delica" },
+  { id: "delica15", label: "Miyuki Delicas (Size 15)", beadTypeId: "delica15", catalog: "delica" },
+  { id: "delica8", label: "Miyuki Delicas (Size 8)", beadTypeId: "delica8", catalog: "delica" },
+  { id: "round11", label: "Miyuki Round Rocailles (Size 11)", beadTypeId: "round11", catalog: "miyukiRound" },
+  { id: "round15", label: "Miyuki Round Rocailles (Size 15)", beadTypeId: "round15", catalog: "miyukiRound" },
+  { id: "round10", label: "Miyuki Round Rocailles (Size 10)", beadTypeId: "round10", catalog: "miyukiRound" },
+  { id: "round6", label: "Miyuki Round Rocailles (Size 6)", beadTypeId: "round6", catalog: "miyukiRound" },
+  { id: "round8", label: "Miyuki Round Rocailles (Size 8)", beadTypeId: "round8", catalog: "miyukiRound" },
+  { id: "round5", label: "Miyuki Round Rocailles (Size 5)", beadTypeId: "round5", catalog: "miyukiRound" },
+  { id: "round9mm", label: "Miyuki Round Rocailles (9mm)", beadTypeId: "round9mm", catalog: "miyukiRound" },
+  { id: "preciosa11", label: "Preciosa Rocailles (Size 11)", beadTypeId: "round11", catalog: "preciosa" },
+  { id: "pony9", label: "Pony Beads (9mm)", beadTypeId: "pony9", catalog: "generic" },
+  { id: "tohoAiko", label: "Toho Aiko", beadTypeId: "tohoAiko", catalog: "tohoAiko" },
+  { id: "tohoTreasures", label: "Toho Treasures", beadTypeId: "tohoTreasures", catalog: "tohoTreasures" },
+  { id: "tohoRounds", label: "Toho Rounds", beadTypeId: "toho11", catalog: "tohoRounds" },
+  { id: "generic", label: "Colores genéricos", beadTypeId: "generic", catalog: "generic" },
 ];
 
 export function getPalette(id: string): Palette {
@@ -78,8 +106,14 @@ export function getPalette(id: string): Palette {
 }
 
 export function getCatalog(paletteId: string): Bead[] {
-  const p = getPalette(paletteId);
-  return p.catalog === "generic" ? GENERIC_BEADS : BEADS;
+  const c = getPalette(paletteId).catalog;
+  return CATALOGS[c ?? "generic"].beads;
+}
+
+// ¿la paleta sirve los colores reales de la marca, o genéricos aproximados?
+export function isRealCatalog(paletteId: string): boolean {
+  const c = getPalette(paletteId).catalog;
+  return c != null && CATALOGS[c].real;
 }
 
 export function getBeadType(paletteId: string): BeadType {

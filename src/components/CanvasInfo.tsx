@@ -1,6 +1,6 @@
 import { useStore } from "../store";
 import { SHAPE_LABEL } from "../data/beads";
-import { getBeadType, getPalette } from "../data/palettes";
+import { getBeadType, getPalette, isRealCatalog } from "../data/palettes";
 import { stitchDef } from "../data/stitches";
 import { pieceSize } from "../lib/measure";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -31,6 +31,7 @@ export default function CanvasInfo() {
         <dl className="space-y-1.5 text-[13px]">
           <Item k="Puntada" v={def.label} />
           <Item k="Paleta" v={getPalette(paletteId).label} />
+          <Item k="Colores" v={isRealCatalog(paletteId) ? "Reales" : "Genéricos (aprox.)"} />
           <Item k="Forma" v={SHAPE_LABEL[beadType.shape]} />
           <Item k="Tamaño cuenta" v={beadType.sizeLabel} />
           <Item k="Rejilla" v={`${cols} × ${rows}`} />
