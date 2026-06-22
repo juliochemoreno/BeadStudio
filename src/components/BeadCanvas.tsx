@@ -55,6 +55,9 @@ export default function BeadCanvas() {
     panFrom: null as any,
   });
   const spaceDown = useRef(false);
+  // multi-touch: punteros activos y estado del gesto de dos dedos (pinch-zoom + pan)
+  const pointers = useRef(new Map<number, { x: number; y: number }>());
+  const gesture = useRef<{ lastDist: number; lastMid: { x: number; y: number } } | null>(null);
   const selDrag = useRef<{ c0: number; r0: number; c1: number; r1: number } | null>(null);
   const moveRef = useRef<{
     lifted: boolean;
@@ -590,7 +593,33 @@ export default function BeadCanvas() {
   }
 
   function onPointerDown(e: React.PointerEvent) {
-    (e.target as Element).setPointerCapture(e.pointerId);
+    // capturar el puntero (no debe abortar el resto si falla, p. ej. multitáctil)
+    try {
+      (e.target as Element).setPointerCapture(e.pointerId);
+    } catch {
+      /* ignorar: seguimos manejando el puntero igualmente */
+    }
+    pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    // dos dedos = gesto de zoom/pan (táctil); cancela cualquier trazo en curso
+    if (pointers.current.size >= 2) {
+      const d0 = drag.current;
+      if (d0.painting) useStore.getState().undo(); // revertir el punto accidental del 1er dedo
+      d0.painting = false;
+      d0.shape = false;
+      d0.start = null;
+      d0.end = null;
+      d0.pan = false;
+      selDrag.current = null;
+      moveRef.current = null;
+      const pts = [...pointers.current.values()];
+      const r = canvasRef.current!.getBoundingClientRect();
+      gesture.current = {
+        lastDist: Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y) || 1,
+        lastMid: { x: (pts[0].x + pts[1].x) / 2 - r.left, y: (pts[0].y + pts[1].y) / 2 - r.top },
+      };
+      draw();
+      return;
+    }
     const p = evtPos(e);
     const d = drag.current;
     if (e.button === 1 || spaceDown.current) {
@@ -651,6 +680,26 @@ export default function BeadCanvas() {
   }
 
   function onPointerMove(e: React.PointerEvent) {
+    if (pointers.current.has(e.pointerId)) {
+      pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    }
+    // gesto de dos dedos: pinch-zoom + pan anclado al punto medio
+    if (gesture.current && pointers.current.size >= 2) {
+      const pts = [...pointers.current.values()];
+      const r = canvasRef.current!.getBoundingClientRect();
+      const newDist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y) || 1;
+      const mid = { x: (pts[0].x + pts[1].x) / 2 - r.left, y: (pts[0].y + pts[1].y) / 2 - r.top };
+      const old = view.current.scale;
+      const ns = Math.max(8, Math.min(64, old * (newDist / gesture.current.lastDist)));
+      const k = ns / old;
+      view.current.offX = mid.x - (gesture.current.lastMid.x - view.current.offX) * k;
+      view.current.offY = mid.y - (gesture.current.lastMid.y - view.current.offY) * k;
+      view.current.scale = ns;
+      gesture.current.lastDist = newDist;
+      gesture.current.lastMid = mid;
+      draw();
+      return;
+    }
     const p = evtPos(e);
     const d = drag.current;
     if (!d.pan && !d.painting && !d.shape && !selDrag.current) updateCursor(p.x, p.y);
@@ -697,7 +746,9 @@ export default function BeadCanvas() {
     }
   }
 
-  function onPointerUp() {
+  function onPointerUp(e: React.PointerEvent) {
+    pointers.current.delete(e.pointerId);
+    if (gesture.current && pointers.current.size < 2) gesture.current = null;
     const d = drag.current;
     const s = useStore.getState();
     if (moveRef.current) {
