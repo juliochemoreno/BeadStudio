@@ -53,6 +53,7 @@ interface State {
   theme: "dark" | "light";
   units: "in" | "cm";
   pro: boolean; // plan de pago: exporta sin marca de agua (placeholder hasta el paywall)
+  view: "landing" | "editor"; // vista actual: landing de preventa o editor
   recent: number[];
   rev: number;
   past: Uint16Array[];
@@ -69,6 +70,7 @@ interface State {
   toggleShapeFill: () => void;
   toggleSchematic: () => void;
   setPro: (v: boolean) => void;
+  setView: (v: "landing" | "editor") => void;
   setBead: (i: number) => void;
   setStitch: (s: StitchId) => void;
   setBeadType: (id: string) => void;
@@ -145,6 +147,7 @@ export const useStore = create<State>()(
   theme: "dark",
   units: "cm",
   pro: false,
+  view: "landing",
   recent: [DEFAULT_BEAD_INDEX],
   rev: 0,
   past: [],
@@ -193,6 +196,7 @@ export const useStore = create<State>()(
   toggleShapeFill: () => set((s) => ({ shapeFill: !s.shapeFill })),
   toggleSchematic: () => set((s) => ({ schematic: !s.schematic })),
   setPro: (v) => set({ pro: v }),
+  setView: (v) => set({ view: v }),
   setBead: (i) =>
     set((s) => ({ currentBead: i, recent: [i, ...s.recent.filter((x) => x !== i)].slice(0, 14) })),
   setStitch: (s) => set({ stitch: s, rev: get().rev + 1 }),

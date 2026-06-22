@@ -91,3 +91,94 @@
     background: transparent;
   }
 }
+
+/* ----------------------------------------------------------------------------
+   Landing de preventa: tipografías con carácter + revelados al cargar.
+   Scopeado a la landing; no afecta los tokens del editor.
+---------------------------------------------------------------------------- */
+.font-display {
+  font-family: "Fraunces", "Iowan Old Style", Georgia, serif;
+  font-optical-sizing: auto;
+}
+.font-body {
+  font-family: "Hanken Grotesk", system-ui, -apple-system, sans-serif;
+}
+
+@keyframes ls-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes ls-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-9px);
+  }
+}
+@keyframes ls-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  70% {
+    transform: scale(1.08);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* revelado al cargar: arranca oculto y sube */
+.ls-reveal {
+  opacity: 0;
+  animation: ls-fade-up 0.8s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.ls-float {
+  animation: ls-float 6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ls-reveal,
+  .ls-float {
+    animation: none;
+    opacity: 1;
+  }
+}
+
+/* textura sutil de papel para el fondo de la landing */
+.ls-grain {
+  background-image: radial-gradient(hsl(28 30% 60% / 0.05) 1px, transparent 1px);
+  background-size: 4px 4px;
+}
+
+/* El autocompletado del navegador pinta el input con su propio fondo (amarillo/
+   azul) y rompe el estilo. Forzamos fondo y color de texto coherentes. */
+.ls-field:-webkit-autofill,
+.ls-field:-webkit-autofill:hover,
+.ls-field:-webkit-autofill:focus,
+.ls-field:-webkit-autofill:active {
+  -webkit-text-fill-color: #1f2430;
+  caret-color: #1f2430;
+  -webkit-box-shadow: 0 0 0 1000px #ffffff inset;
+  box-shadow: 0 0 0 1000px #ffffff inset;
+  border-radius: 12px;
+  transition: background-color 9999s ease-in-out 0s;
+}
+.ls-field-dark:-webkit-autofill,
+.ls-field-dark:-webkit-autofill:hover,
+.ls-field-dark:-webkit-autofill:focus,
+.ls-field-dark:-webkit-autofill:active {
+  -webkit-text-fill-color: #ffffff;
+  caret-color: #ffffff;
+  -webkit-box-shadow: 0 0 0 1000px #2b3242 inset;
+  box-shadow: 0 0 0 1000px #2b3242 inset;
+}

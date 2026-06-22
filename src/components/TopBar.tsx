@@ -36,6 +36,7 @@ import {
   Sun,
   Moon,
   BookOpen,
+  ArrowLeft,
 } from "lucide-react";
 
 function getState() {
@@ -59,18 +60,32 @@ export default function TopBar() {
   const schematic = useStore((s) => s.schematic);
   const theme = useStore((s) => s.theme);
   const units = useStore((s) => s.units);
+  const view = useStore((s) => s.view);
   const [guideOpen, setGuideOpen] = useState(false);
 
   return (
     <>
       <BeadGuide open={guideOpen} onOpenChange={setGuideOpen} />
       <header className="flex h-9 items-center gap-1 border-b border-border bg-card px-2">
-        <div className="mr-1 flex items-center gap-1.5 pl-1 pr-2">
+        {view === "editor" && (
+          <button
+            onClick={() => getState().setView("landing")}
+            title="Salir al inicio"
+            className="mr-0.5 flex items-center gap-1 rounded-md border border-border px-2 py-1 text-[12.5px] font-medium text-foreground transition-colors hover:bg-accent"
+          >
+            <ArrowLeft size={14} /> Inicio
+          </button>
+        )}
+        <button
+          onClick={() => getState().setView("landing")}
+          title="Volver al inicio"
+          className="mr-1 flex items-center gap-1.5 rounded-md pl-1 pr-2 transition-colors hover:bg-accent"
+        >
           <LogoIcon />
           <span className="text-[13px] font-semibold tracking-tight text-foreground">
             Bead<span className="text-brand">Studio</span>
           </span>
-        </div>
+        </button>
 
         <Menu label="Archivo">
           <DropdownMenuItem onClick={() => getState().clear()}>Nuevo lienzo</DropdownMenuItem>

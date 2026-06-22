@@ -63,8 +63,8 @@ export default function SidePanel({
     <aside
       className={cn(
         "flex h-full min-h-0 flex-col overflow-hidden border-l border-border bg-card",
-        // móvil: drawer deslizante desde la derecha
-        "fixed inset-y-0 right-0 z-40 w-[82%] max-w-[19rem] shadow-2xl transition-transform duration-200",
+        // móvil: drawer deslizante desde la derecha (contenido en el marco del editor)
+        "absolute inset-y-0 right-0 z-40 w-[82%] max-w-[19rem] shadow-2xl transition-transform duration-200",
         open ? "translate-x-0" : "translate-x-full",
         // escritorio: panel fijo de siempre
         "md:static md:z-auto md:w-72 md:max-w-none md:translate-x-0 md:shadow-none"
