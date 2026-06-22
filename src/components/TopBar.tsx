@@ -42,16 +42,16 @@ function getState() {
   return useStore.getState();
 }
 function doExportPng() {
-  const { grid, cols, rows, stitch, beadTypeId, catalogId } = getState();
-  exportPNG(grid, cols, rows, stitch, beadTypeId, catalogId);
+  const { grid, cols, rows, stitch, beadTypeId, catalogId, pro } = getState();
+  exportPNG(grid, cols, rows, stitch, beadTypeId, catalogId, !pro);
 }
 function doExportChart() {
-  const { grid, cols, rows, catalogId } = getState();
-  exportWordChart(grid, cols, rows, catalogId);
+  const { grid, cols, rows, catalogId, pro } = getState();
+  exportWordChart(grid, cols, rows, catalogId, !pro);
 }
 function doPrint() {
-  const { grid, cols, rows, stitch, beadTypeId, catalogId } = getState();
-  printPattern(grid, cols, rows, stitch, beadTypeId, catalogId);
+  const { grid, cols, rows, stitch, beadTypeId, catalogId, pro } = getState();
+  printPattern(grid, cols, rows, stitch, beadTypeId, catalogId, !pro);
 }
 
 export default function TopBar() {

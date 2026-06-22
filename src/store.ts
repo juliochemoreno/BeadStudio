@@ -52,6 +52,7 @@ interface State {
   showRulers: boolean;
   theme: "dark" | "light";
   units: "in" | "cm";
+  pro: boolean; // plan de pago: exporta sin marca de agua (placeholder hasta el paywall)
   recent: number[];
   rev: number;
   past: Uint16Array[];
@@ -67,6 +68,7 @@ interface State {
   toggleUnits: () => void;
   toggleShapeFill: () => void;
   toggleSchematic: () => void;
+  setPro: (v: boolean) => void;
   setBead: (i: number) => void;
   setStitch: (s: StitchId) => void;
   setBeadType: (id: string) => void;
@@ -142,6 +144,7 @@ export const useStore = create<State>()(
   showRulers: true,
   theme: "dark",
   units: "cm",
+  pro: false,
   recent: [DEFAULT_BEAD_INDEX],
   rev: 0,
   past: [],
@@ -189,6 +192,7 @@ export const useStore = create<State>()(
   toggleUnits: () => set((s) => ({ units: s.units === "in" ? "cm" : "in" })),
   toggleShapeFill: () => set((s) => ({ shapeFill: !s.shapeFill })),
   toggleSchematic: () => set((s) => ({ schematic: !s.schematic })),
+  setPro: (v) => set({ pro: v }),
   setBead: (i) =>
     set((s) => ({ currentBead: i, recent: [i, ...s.recent.filter((x) => x !== i)].slice(0, 14) })),
   setStitch: (s) => set({ stitch: s, rev: get().rev + 1 }),
@@ -468,6 +472,7 @@ export const useStore = create<State>()(
       partialize: (s) => ({
         theme: s.theme,
         units: s.units,
+        pro: s.pro,
         showNumbers: s.showNumbers,
         shapeFill: s.shapeFill,
         schematic: s.schematic,
@@ -494,6 +499,9 @@ export const useStore = create<State>()(
         if (state.currentBead >= cat.length) state.currentBead = 0;
         state.recent = state.recent.filter((i) => i < cat.length);
         if (state.recent.length === 0) state.recent = [state.currentBead];
+        // entitlement del plan de pago: forzar booleano (es un placeholder
+        // falsificable desde el cliente hasta que exista validación en servidor)
+        state.pro = state.pro === true;
         // cols/rows se persisten pero el lienzo no: recrear un grid vacío del
         // tamaño guardado para que grid.length siga coincidiendo con cols*rows.
         state.cols = Math.max(2, Math.min(400, Math.round(state.cols)));
