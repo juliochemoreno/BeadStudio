@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useStore, ToolId } from "../store";
-import { EMPTY } from "../data/beads";
+import { EMPTY, Finish } from "../data/beads";
 import { getBeadType, getCatalog } from "../data/palettes";
 import { stitchDef, beadOrient } from "../data/stitches";
 import { drawBead } from "../lib/beadRender";
@@ -21,6 +21,11 @@ import CanvasInfo from "./CanvasInfo";
 const SHAPE_TOOLS: ToolId[] = ["line", "rect", "oval", "triangle", "diamond"];
 const DETAIL_MIN = 9; // px de celda a partir del cual se dibuja la cuenta con relieve
 const RULER_THICKNESS = 24; // px de ancho/alto de las reglas
+
+// DPR efectivo, topado a 2: en móviles de DPR 3 evita rellenar 9× los píxeles
+function getDpr() {
+  return Math.min(window.devicePixelRatio || 1, 2);
+}
 
 function previewCells(tool: ToolId, c0: number, r0: number, c1: number, r1: number): Cell[] {
   switch (tool) {
@@ -58,6 +63,9 @@ export default function BeadCanvas() {
   // multi-touch: punteros activos y estado del gesto de dos dedos (pinch-zoom + pan)
   const pointers = useRef(new Map<number, { x: number; y: number }>());
   const gesture = useRef<{ lastDist: number; lastMid: { x: number; y: number } } | null>(null);
+  // perf: caché de sprites de cuentas + coalescencia de redibujado por rAF
+  const spriteCache = useRef(new Map<string, HTMLCanvasElement>());
+  const rafId = useRef<number | null>(null);
   const selDrag = useRef<{ c0: number; r0: number; c1: number; r1: number } | null>(null);
   const moveRef = useRef<{
     lifted: boolean;
@@ -112,6 +120,53 @@ export default function BeadCanvas() {
     return def.offset === "col" ? (Math.floor(c / def.drop) % 2) * 0.5 * cellH() : 0;
   }
 
+  // Dibuja una cuenta desde un sprite cacheado (offscreen) en vez de recrear sus
+  // gradientes por celda cada frame. La clave incluye todo lo que afecta píxeles.
+  function drawCachedBead(
+    ctx: CanvasRenderingContext2D,
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+    hex: string,
+    finish: Finish,
+    orient: "v" | "h"
+  ) {
+    const dpr = getDpr();
+    const cw = Math.max(1, Math.round(w));
+    const cch = Math.max(1, Math.round(h));
+    const key = `${hex}|${beadType.shape}|${finish}|${orient}|${cw}|${cch}|${dpr}`;
+    let tile = spriteCache.current.get(key);
+    if (!tile) {
+      tile = document.createElement("canvas");
+      tile.width = Math.round(cw * dpr);
+      tile.height = Math.round(cch * dpr);
+      const tctx = tile.getContext("2d")!;
+      tctx.scale(dpr, dpr);
+      drawBead(tctx, 0, 0, cw, cch, hex, beadType.shape, finish, orient);
+      if (spriteCache.current.size > 512) spriteCache.current.clear(); // tope de memoria
+      spriteCache.current.set(key, tile);
+    }
+    ctx.drawImage(tile, x, y, w, h);
+  }
+
+  // Coalesce los redibujados a 1 por frame (ráfagas de pointermove/pinch).
+  function scheduleDraw() {
+    if (rafId.current != null) return;
+    rafId.current = requestAnimationFrame(() => {
+      rafId.current = null;
+      draw();
+    });
+  }
+  // Fuerza un redibujado inmediato (frame final al soltar un gesto).
+  function drawNow() {
+    if (rafId.current != null) {
+      cancelAnimationFrame(rafId.current);
+      rafId.current = null;
+    }
+    draw();
+  }
+
   function draw() {
     const wrap = wrapRef.current,
       canvas = canvasRef.current;
@@ -125,9 +180,15 @@ export default function BeadCanvas() {
     const { grid } = useStore.getState();
     const detail = scale >= DETAIL_MIN;
 
-    for (let r = 0; r < rows; r++) {
+    // sólo iterar las celdas dentro del viewport (±1 por el desfase de media celda)
+    const cStart = Math.max(0, Math.floor((-offX) / scale) - 1);
+    const cEnd = Math.min(cols, Math.ceil((W - offX) / scale) + 1);
+    const rStart = Math.max(0, Math.floor((-offY) / ch) - 1);
+    const rEnd = Math.min(rows, Math.ceil((H - offY) / ch) + 1);
+
+    for (let r = rStart; r < rEnd; r++) {
       const ox = offsetX(r);
-      for (let c = 0; c < cols; c++) {
+      for (let c = cStart; c < cEnd; c++) {
         const x = offX + c * scale + ox;
         const y = offY + r * ch + offsetY(c);
         if (x + scale < 0 || x > W || y + ch < 0 || y > H) continue;
@@ -154,7 +215,7 @@ export default function BeadCanvas() {
             ctx.strokeRect(x + 0.5, y + 0.5, scale - 1, ch - 1);
           }
         } else if (detail) {
-          drawBead(ctx, x, y, scale, ch, bead.hex, beadType.shape, bead.finish, beadOrient(def, c, r));
+          drawCachedBead(ctx, x, y, scale, ch, bead.hex, bead.finish, beadOrient(def, c, r));
         } else {
           ctx.fillStyle = bead.hex;
           ctx.fillRect(x + 0.5, y + 0.5, scale - 1, ch - 1);
@@ -441,7 +502,7 @@ export default function BeadCanvas() {
     const wrap = wrapRef.current,
       canvas = canvasRef.current;
     if (!wrap || !canvas) return;
-    const dpr = window.devicePixelRatio || 1;
+    const dpr = getDpr();
     canvas.width = wrap.clientWidth * dpr;
     canvas.height = wrap.clientHeight * dpr;
     canvas.style.width = wrap.clientWidth + "px";
@@ -471,11 +532,17 @@ export default function BeadCanvas() {
     draw();
   }
 
-  // redibujar al pintar o al cambiar numeración/tema/unidades
+  // redibujar al pintar o al cambiar numeración/tema/unidades (coalescido por rAF)
   useEffect(() => {
-    draw();
+    scheduleDraw();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rev, showNumbers, showRulers, theme, selection, schematic, units]);
+
+  // invalidar la caché de sprites al cambiar el catálogo o el tipo de cuenta
+  useEffect(() => {
+    spriteCache.current.clear();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [catalogId, beadTypeId]);
 
   // reencuadrar al cambiar puntada, tamaño o tipo de cuenta (cambia la geometría)
   useEffect(() => {
@@ -491,7 +558,12 @@ export default function BeadCanvas() {
   useEffect(() => {
     resizeCanvas();
     fit();
-    const onResize = () => resizeCanvas();
+    // debounce: el backing store se reasigna sólo tras el último resize (barra URL móvil, rotación)
+    let resizeTimer: ReturnType<typeof setTimeout> | null = null;
+    const onResize = () => {
+      if (resizeTimer) clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(resizeCanvas, 100);
+    };
     window.addEventListener("resize", onResize);
     const onKeyDown = (e: KeyboardEvent) => {
       const el = e.target as HTMLElement;
@@ -542,6 +614,8 @@ export default function BeadCanvas() {
       window.removeEventListener("resize", onResize);
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("keyup", onKeyUp);
+      if (resizeTimer) clearTimeout(resizeTimer);
+      if (rafId.current != null) cancelAnimationFrame(rafId.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -617,7 +691,7 @@ export default function BeadCanvas() {
         lastDist: Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y) || 1,
         lastMid: { x: (pts[0].x + pts[1].x) / 2 - r.left, y: (pts[0].y + pts[1].y) / 2 - r.top },
       };
-      draw();
+      scheduleDraw();
       return;
     }
     const p = evtPos(e);
@@ -654,7 +728,7 @@ export default function BeadCanvas() {
         s.setSelection(null);
         selDrag.current = { c0: cell[0], r0: cell[1], c1: cell[0], r1: cell[1] };
       }
-      draw();
+      scheduleDraw();
       return;
     }
     if (s.tool === "picker") {
@@ -666,7 +740,7 @@ export default function BeadCanvas() {
       d.shape = true;
       d.start = cell;
       d.end = cell;
-      draw();
+      scheduleDraw();
       return;
     }
     if (s.tool === "fill") {
@@ -697,7 +771,7 @@ export default function BeadCanvas() {
       view.current.scale = ns;
       gesture.current.lastDist = newDist;
       gesture.current.lastMid = mid;
-      draw();
+      scheduleDraw();
       return;
     }
     const p = evtPos(e);
@@ -706,7 +780,7 @@ export default function BeadCanvas() {
     if (d.pan && d.panFrom) {
       view.current.offX = d.panFrom.ox + (e.clientX - d.panFrom.x);
       view.current.offY = d.panFrom.oy + (e.clientY - d.panFrom.y);
-      draw();
+      scheduleDraw();
       return;
     }
     const cell = pickCell(p.x, p.y);
@@ -727,18 +801,18 @@ export default function BeadCanvas() {
       // limitar el movimiento para que el bloque quede siempre dentro del grid
       mv.dc = Math.max(-mv.oc, Math.min(cols - (mv.oc + mv.w), rawDc));
       mv.dr = Math.max(-mv.or, Math.min(rows - (mv.or + mv.h), rawDr));
-      draw();
+      scheduleDraw();
       return;
     }
     if (selDrag.current) {
       selDrag.current.c1 = cell[0];
       selDrag.current.r1 = cell[1];
-      draw();
+      scheduleDraw();
       return;
     }
     if (d.shape) {
       d.end = cell;
-      draw();
+      scheduleDraw();
       return;
     }
     if (d.painting) {
@@ -789,6 +863,7 @@ export default function BeadCanvas() {
     d.start = null;
     d.end = null;
     d.panFrom = null;
+    drawNow(); // pintar el frame final (pan/pinch/selección no pasan por rev)
   }
 
   function onWheel(e: React.WheelEvent) {
@@ -799,7 +874,7 @@ export default function BeadCanvas() {
     const k = v.scale / old;
     v.offX = p.x - (p.x - v.offX) * k;
     v.offY = p.y - (p.y - v.offY) * k;
-    draw();
+    scheduleDraw();
   }
 
   function zoom(factor: number) {
