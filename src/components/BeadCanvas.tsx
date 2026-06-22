@@ -27,6 +27,46 @@ function getDpr() {
   return Math.min(window.devicePixelRatio || 1, 2);
 }
 
+// Marca de agua del lienzo en vivo: que cualquier captura de pantalla salga
+// marcada igual que el export (el navegador no puede bloquear capturas, así que
+// la defensa real es marcarlas). El usuario Pro ve el editor limpio. Muy sutil
+// para no estorbar al diseñar.
+function drawEditorWatermark(
+  ctx: CanvasRenderingContext2D,
+  W: number,
+  H: number,
+  theme: "dark" | "light",
+  rect: { x: number; y: number; w: number; h: number }
+) {
+  const ink = theme === "light" ? "29,35,48" : "235,240,250";
+
+  // --- retícula diagonal, limitada al área del patrón ---
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(rect.x, rect.y, rect.w, rect.h);
+  ctx.clip();
+  const cx = W / 2,
+    cy = H / 2;
+  ctx.translate(cx, cy);
+  ctx.rotate((-30 * Math.PI) / 180);
+  ctx.translate(-cx, -cy);
+  ctx.font = "600 13px Inter, system-ui, sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillStyle = `rgba(${ink},0.08)`;
+  const phrase = "BeadStudio · beadstudio.app";
+  const stepX = 220,
+    stepY = 132;
+  const diag = Math.hypot(W, H) / 2; // medio-diagonal cubre todo el lienzo rotado
+  for (let y = cy - diag; y <= cy + diag; y += stepY) {
+    const odd = Math.round((y - cy) / stepY) % 2;
+    for (let x = cx - diag; x <= cx + diag; x += stepX) {
+      ctx.fillText(phrase, x + (odd ? stepX / 2 : 0), y);
+    }
+  }
+  ctx.restore();
+}
+
 function previewCells(tool: ToolId, c0: number, r0: number, c1: number, r1: number): Cell[] {
   switch (tool) {
     case "line":
@@ -97,6 +137,7 @@ export default function BeadCanvas() {
   const toggleRulers = useStore((s) => s.toggleRulers);
   const theme = useStore((s) => s.theme);
   const units = useStore((s) => s.units);
+  const pro = useStore((s) => s.pro); // Pro = editor sin marca de agua
   const ctheme =
     theme === "light"
       ? { empty: "#ededed", line: "#dcdcdc", num: "#737373", numBold: "#0a0a0a", guide: "#c4c4c4" }
@@ -387,6 +428,13 @@ export default function BeadCanvas() {
       ctx.restore();
     }
 
+    // marca de agua del editor (las capturas salen marcadas; el Pro lo ve limpio)
+    if (!pro) {
+      const patW = cols * scale + (def.offset === "row" ? 0.5 * scale : 0);
+      const patH = rows * ch + (def.offset === "col" ? 0.5 * ch : 0);
+      drawEditorWatermark(ctx, W, H, theme, { x: offX, y: offY, w: patW, h: patH });
+    }
+
     // ---- Reglas físicas (métricas o imperiales) ----
     if (showRulers) {
       const pitch = cellPitch(def, beadType); // { stepX, stepY } en mm
@@ -536,7 +584,7 @@ export default function BeadCanvas() {
   useEffect(() => {
     scheduleDraw();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rev, showNumbers, showRulers, theme, selection, schematic, units]);
+  }, [rev, showNumbers, showRulers, theme, selection, schematic, units, pro]);
 
   // invalidar la caché de sprites al cambiar el catálogo o el tipo de cuenta
   useEffect(() => {
