@@ -34,13 +34,15 @@ export default function App() {
 
         <SidePanel open={panelOpen} onClose={() => setPanelOpen(false)} />
 
-        {/* botón flotante para abrir el panel (solo móvil) */}
+        {/* botón flotante para abrir el panel (solo móvil) — abajo-derecha,
+            separado de la tira de colores y libre de los controles de zoom */}
         {!panelOpen && (
           <button
             onClick={() => setPanelOpen(true)}
-            className="fixed bottom-4 left-1/2 z-30 flex -translate-x-1/2 items-center gap-2 rounded-full border border-border bg-card px-4 py-2 text-sm font-medium text-foreground shadow-lg md:hidden"
+            aria-label="Opciones del patrón"
+            className="fixed bottom-4 right-14 z-30 grid h-11 w-11 place-items-center rounded-full border border-border bg-card text-foreground shadow-lg md:hidden"
           >
-            <SlidersHorizontal size={16} /> Opciones
+            <SlidersHorizontal size={18} />
           </button>
         )}
       </div>
